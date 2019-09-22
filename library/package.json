@@ -1,0 +1,30 @@
+{
+	"name": "@zoltu/ethereum-abi-encoder",
+	"version": "1.0.0",
+	"description": "A single dependency Ethereum ABI encoder/decoder.  Also handles signature parsing and generation!",
+	"repository": {
+		"url": "https://github.com/Zoltu/ethereum-abi-encoder"
+	},
+	"license": "Unlicense",
+	"main": "output-node/index.js",
+	"module": "output-es/index.js",
+	"dependencies": {
+		"@zoltu/ethereum-types": "3.0.1"
+	},
+	"devDependencies": {
+		"@zoltu/typescript-transformer-append-js-extension": "1.0.1",
+		"ttypescript": "1.5.7",
+		"ts-node": "8.3.0",
+		"typescript": "3.6.3"
+	},
+	"scripts": {
+		"build": "ttsc --project tsconfig-es.json && tsc --project tsconfig-node.json",
+		"prepublishOnly": "node --eval \"require('fs').copyFile('../README.md', 'README.md', error => {if(error) throw error})\"",
+		"postpublish": "node --eval \"require('fs').unlink('README.md', error => {if(error) throw error})\""
+	},
+	"files": [
+		"source/",
+		"output-es/",
+		"output-node/"
+	]
+}

@@ -1,0 +1,21 @@
+{
+	"compilerOptions": {
+		"target": "esnext",
+		"module": "es2015",
+		"moduleResolution": "node",
+		"rootDir": "source",
+		"noEmit": true,
+		"sourceMap": true,
+		"inlineSources": true,
+		"declaration": true,
+		"strict": true,
+		"noEmitOnError": true,
+		"noImplicitReturns": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"lib": [ "es2018", "esnext.bigint", "es2019.array" ],
+	},
+	"include": [
+		"source/**/*.ts",
+	],
+}
