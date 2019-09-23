@@ -1,14 +1,46 @@
 import { EncodableTuple, Encodable, Bytes, EncodableArray, Address, FixedBytesLike, Bytes32, Bytes31, Bytes30, Bytes29, Bytes28, Bytes27, Bytes26, Bytes25, Bytes24, Bytes23, Bytes22, Bytes21, Bytes20, Bytes19, Bytes18, Bytes17, Bytes16, Bytes15, Bytes14, Bytes13, Bytes12, Bytes11, Bytes10, Bytes9, Bytes8, Bytes7, Bytes6, Bytes5, Bytes4, Bytes3, Bytes2, Bytes1 } from '@zoltu/ethereum-types'
 
-export interface FunctionDescription {
-	readonly name: string,
+interface FunctionDescription {
+	readonly type?: 'function'
+	readonly name: string
 	readonly inputs: ReadonlyArray<ParameterDescription>
+	readonly outputs?: ReadonlyArray<ParameterDescription>
+	readonly stateMutability?: 'pure' | 'view' | 'nonpayable' | 'payable'
 }
 
-export interface ParameterDescription {
+interface EventDescription {
+	readonly type: 'event'
+	readonly name: string
+	readonly inputs: ReadonlyArray<EventParameterDescription>
+	readonly anonymous?: boolean
+}
+
+interface ConstructorDescription {
+	readonly type: 'constructor'
+	readonly inputs?: ReadonlyArray<ParameterDescription>
+	readonly stateMutability?: 'pure' | 'view' | 'nonpayable' | 'payable'
+}
+
+interface FallbackDescription {
+	readonly type: 'fallback'
+	readonly stateMutability?: 'pure' | 'view' | 'nonpayable' | 'payable'
+}
+
+type AbiDescription = FunctionDescription | EventDescription | ConstructorDescription | FallbackDescription
+
+interface ParameterDescription {
 	readonly name: string
 	readonly type: string
 	readonly components?: ReadonlyArray<ParameterDescription>
+}
+
+interface EventParameterDescription extends ParameterDescription {
+	readonly indexed: boolean
+}
+
+interface DecodedEvent {
+	readonly name: string
+	readonly parameters: EncodableTuple
 }
 
 
@@ -20,7 +52,7 @@ export function parseSignature(functionSignature: string): FunctionDescription {
 	if (matchedSignature === null) throw new Error(`${functionSignature} is not a valid Solidity function signature.`)
 	const name = matchedSignature[1]
 	const inputs = parseParameters(matchedSignature[2])
-	return { name, inputs }
+	return { type: 'function', name, inputs, outputs: [] }
 }
 
 function parseParameters(functionParameters: string): Array<ParameterDescription> {
@@ -399,6 +431,52 @@ function tryEncodeFunction(description: ParameterDescription): { isDynamic: neve
 	if (description.type !== 'function') return null
 	throw new Error(`Encoding into EVM type ${description.type} is not supported`)
 }
+
+
+// events
+
+export async function decodeUnknownEvent(keccak256: (message: Uint8Array) => Promise<bigint>, abi: ReadonlyArray<AbiDescription>, topics: ReadonlyArray<Bytes32>, data: Bytes): Promise<DecodedEvent> {
+	for (const eventDescription of abi) {
+		if (!isEventDescription(eventDescription)) continue
+		const canonicalSignature = `${eventDescription.name}(${eventDescription.inputs.map(parameter => parameter.type).join(",")})`
+		const signatureHash = Bytes32.fromUnsignedInteger(await keccak256(new TextEncoder().encode(canonicalSignature)))
+		if (!topics[0].equals(signatureHash)) continue
+		return decodeEvent(eventDescription, topics, data)
+	}
+	throw new Error(`No event description matched the event ${topics[0]}`)
+}
+
+export function decodeEvent(eventDescription: EventDescription, topics: ReadonlyArray<Bytes32>, data: Bytes): DecodedEvent {
+	// CONSIDER: should we take in a hash function so we can verify topics[0] matches, or just blindly extract?
+	const decodedParameters = decodeEventParameters(eventDescription.inputs, topics, data)
+	return { name: eventDescription.name, parameters: decodedParameters }
+}
+
+function decodeEventParameters(parameters: ReadonlyArray<EventParameterDescription>, topics: ReadonlyArray<Bytes32>, data: Bytes): EncodableTuple {
+	const indexedTypesForDecoding = parameters.filter(parameter => parameter.indexed).map(getTypeForEventDecoding)
+	const nonIndexedTypesForDecoding = parameters.filter(parameter => !parameter.indexed)
+	const indexedData = concatenateBytes(topics.slice(1))
+	const nonIndexedData = data
+	const decodedIndexedParameters = decodeParameters(indexedTypesForDecoding, indexedData)
+	if (!decodedIndexedParameters) throw new Error(`Failed to decode topics for event ${topics[0]}.\n${indexedData}`)
+	const decodedNonIndexedParameters = decodeParameters(nonIndexedTypesForDecoding, nonIndexedData)
+	if (!decodedNonIndexedParameters) throw new Error(`Failed to decode data for event ${topics[0]}.\n${nonIndexedData}`)
+	return Object.assign({}, decodedIndexedParameters, decodedNonIndexedParameters)
+}
+
+function getTypeForEventDecoding(parameter: EventParameterDescription): EventParameterDescription {
+	if (!parameter.indexed) return parameter
+	if (parameter.type !== 'string'
+		&& parameter.type !== 'bytes'
+		// TODO: check to see if we need to collapse fixed size tuples or not
+		&& !parameter.type.startsWith('tuple')
+		// TODO: check to see if we need to collapse fixed length arrays here or not
+		&& !parameter.type.endsWith('[]'))
+		return parameter
+	return Object.assign({}, parameter, { type: 'bytes32' })
+}
+
+function isEventDescription(maybe: AbiDescription): maybe is EventDescription { return maybe.type === 'event' }
 
 
 // helpers

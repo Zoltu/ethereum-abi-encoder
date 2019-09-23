@@ -1,6 +1,6 @@
 {
 	"name": "@zoltu/ethereum-abi-encoder",
-	"version": "1.0.0",
+	"version": "2.0.0",
 	"description": "A single dependency Ethereum ABI encoder/decoder.  Also handles signature parsing and generation!",
 	"repository": {
 		"url": "https://github.com/Zoltu/ethereum-abi-encoder"
