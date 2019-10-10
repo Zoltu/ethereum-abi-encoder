@@ -1,6 +1,6 @@
 import { EncodableTuple, Encodable, Bytes, EncodableArray, Address, FixedBytesLike, Bytes32, Bytes31, Bytes30, Bytes29, Bytes28, Bytes27, Bytes26, Bytes25, Bytes24, Bytes23, Bytes22, Bytes21, Bytes20, Bytes19, Bytes18, Bytes17, Bytes16, Bytes15, Bytes14, Bytes13, Bytes12, Bytes11, Bytes10, Bytes9, Bytes8, Bytes7, Bytes6, Bytes5, Bytes4, Bytes3, Bytes2, Bytes1 } from '@zoltu/ethereum-types'
 
-interface FunctionDescription {
+export interface FunctionDescription {
 	readonly type?: 'function'
 	readonly name: string
 	readonly inputs: ReadonlyArray<ParameterDescription>
@@ -8,37 +8,37 @@ interface FunctionDescription {
 	readonly stateMutability?: 'pure' | 'view' | 'nonpayable' | 'payable'
 }
 
-interface EventDescription {
+export interface EventDescription {
 	readonly type: 'event'
 	readonly name: string
 	readonly inputs: ReadonlyArray<EventParameterDescription>
 	readonly anonymous?: boolean
 }
 
-interface ConstructorDescription {
+export interface ConstructorDescription {
 	readonly type: 'constructor'
 	readonly inputs?: ReadonlyArray<ParameterDescription>
 	readonly stateMutability?: 'pure' | 'view' | 'nonpayable' | 'payable'
 }
 
-interface FallbackDescription {
+export interface FallbackDescription {
 	readonly type: 'fallback'
 	readonly stateMutability?: 'pure' | 'view' | 'nonpayable' | 'payable'
 }
 
-type AbiDescription = FunctionDescription | EventDescription | ConstructorDescription | FallbackDescription
+export type AbiDescription = FunctionDescription | EventDescription | ConstructorDescription | FallbackDescription
 
-interface ParameterDescription {
+export interface ParameterDescription {
 	readonly name: string
 	readonly type: string
 	readonly components?: ReadonlyArray<ParameterDescription>
 }
 
-interface EventParameterDescription extends ParameterDescription {
+export interface EventParameterDescription extends ParameterDescription {
 	readonly indexed: boolean
 }
 
-interface DecodedEvent {
+export interface DecodedEvent {
 	readonly name: string
 	readonly parameters: EncodableTuple
 }
