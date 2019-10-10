@@ -1,6 +1,6 @@
 {
 	"name": "@zoltu/ethereum-abi-encoder",
-	"version": "2.0.0",
+	"version": "2.0.1",
 	"description": "A single dependency Ethereum ABI encoder/decoder.  Also handles signature parsing and generation!",
 	"repository": {
 		"url": "https://github.com/Zoltu/ethereum-abi-encoder"
@@ -9,7 +9,7 @@
 	"main": "output-node/index.js",
 	"module": "output-es/index.js",
 	"dependencies": {
-		"@zoltu/ethereum-types": "3.0.1"
+		"@zoltu/ethereum-types": "5.0.0"
 	},
 	"devDependencies": {
 		"@zoltu/typescript-transformer-append-js-extension": "1.0.1",
