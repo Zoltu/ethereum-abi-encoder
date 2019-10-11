@@ -1,7 +1,7 @@
-declare type Encodable = EncodablePrimitive | EncodableTuple | EncodableArray;
-declare type EncodablePrimitive = Uint8Array | string | boolean | bigint;
-interface EncodableTuple { [x: string]: Encodable }
-interface EncodableArray { readonly length: number, readonly [n: number]: Encodable }
+export type Encodable = EncodablePrimitive | EncodableTuple | EncodableArray;
+export type EncodablePrimitive = Uint8Array | string | boolean | bigint;
+export interface EncodableTuple { [x: string]: Encodable }
+export interface EncodableArray extends ReadonlyArray<Encodable> {}
 
 export interface FunctionDescription {
 	readonly type?: 'function'
@@ -286,7 +286,7 @@ function tryDecodeFunction(description: ParameterDescription, _data: Uint8Array,
 
 // encoding
 
-export function encodeParameters(descriptions: ReadonlyArray<ParameterDescription>, parameters: ReadonlyArray<Encodable>): Uint8Array {
+export function encodeParameters(descriptions: ReadonlyArray<ParameterDescription>, parameters: EncodableArray): Uint8Array {
 	if (descriptions.length !== parameters.length) throw new Error(`Number of provided parameters (${parameters.length}) does not match number of expected parameters (${descriptions.length})`)
 	const encodedParameters = parameters.map((nestedParameter, index) => encodeParameter(descriptions[index], nestedParameter))
 	return encodeDynamicData(encodedParameters)
