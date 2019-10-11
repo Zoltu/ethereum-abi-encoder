@@ -286,6 +286,26 @@ function tryDecodeFunction(description: ParameterDescription, _data: Uint8Array,
 
 // encoding
 
+export async function encodeMethod(keccak256: (message: Uint8Array) => Promise<bigint>, functionDescription: FunctionDescription, parameters: EncodableArray): Promise<Uint8Array>
+export function encodeMethod(functionSelector: number, parameterDescriptions: ReadonlyArray<ParameterDescription>, parameters: EncodableArray): Uint8Array
+export function encodeMethod(hasherOrSelector: ((message: Uint8Array) => Promise<bigint>) | number, description: FunctionDescription | ReadonlyArray<ParameterDescription>, parameters: EncodableArray): Promise<Uint8Array> | Uint8Array {
+	if (typeof hasherOrSelector === 'number' && Array.isArray(description)) return encodeMethodWithSelector(hasherOrSelector, description, parameters)
+	else if (typeof hasherOrSelector === 'function' && !Array.isArray(description)) return encodeMethodWithHasher(hasherOrSelector, description, parameters)
+	else throw new Error(`Called with invalid parameters`)
+}
+
+async function encodeMethodWithHasher(keccak256: (message: Uint8Array) => Promise<bigint>, functionDescription: FunctionDescription, parameters: EncodableArray): Promise<Uint8Array> {
+	const canonicalSignature = generateSignature(functionDescription)
+	const canonicalSignatureHash = await keccak256(new TextEncoder().encode(canonicalSignature))
+	const functionSelector = canonicalSignatureHash >> 224n
+	return encodeMethod(Number(functionSelector), functionDescription.inputs, parameters)
+}
+
+function encodeMethodWithSelector(functionSelector: number, parameterDescriptions: ReadonlyArray<ParameterDescription>, parameters: EncodableArray): Uint8Array {
+	const encodedParameters = encodeParameters(parameterDescriptions, parameters)
+	return new Uint8Array([...integerToBytes(functionSelector, 4), ...encodedParameters])
+}
+
 export function encodeParameters(descriptions: ReadonlyArray<ParameterDescription>, parameters: EncodableArray): Uint8Array {
 	if (descriptions.length !== parameters.length) throw new Error(`Number of provided parameters (${parameters.length}) does not match number of expected parameters (${descriptions.length})`)
 	const encodedParameters = parameters.map((nestedParameter, index) => encodeParameter(descriptions[index], nestedParameter))
@@ -528,10 +548,10 @@ function bytesToInteger(bytes: Uint8Array, signed = false): bigint {
 		: bytesToUnsigned(bytes)
 }
 
-function integerToBytes(value: bigint | number, width = 32, signed = false): Uint8Array {
+function integerToBytes(value: bigint | number, byteWidth = 32, signed = false): Uint8Array {
 	return signed
-		? signedToBytes(value, width)
-		: unsignedToBytes(value, width)
+		? signedToBytes(value, byteWidth)
+		: unsignedToBytes(value, byteWidth)
 }
 
 function bytesToUnsigned(bytes: Uint8Array) {
@@ -547,20 +567,20 @@ function bytesToSigned(bytes: Uint8Array) {
 	return twosComplement(unsignedValue, bytes.length * 8)
 }
 
-function unsignedToBytes(value: bigint | number, width: number = 32): Uint8Array {
+function unsignedToBytes(value: bigint | number, byteWidth: number = 32): Uint8Array {
 	if (typeof value === 'number') value = BigInt(value)
-	const bits = width * 8
+	const bits = byteWidth * 8
 	if (value >= 2n ** BigInt(bits) || value < 0n) throw new Error(`Cannot fit ${value} into a ${bits}-bit unsigned integer.`)
-	const result = new Uint8Array(width)
-	for (let i = 0; i < width; ++i) {
+	const result = new Uint8Array(byteWidth)
+	for (let i = 0; i < byteWidth; ++i) {
 		result[i] = Number((value >> BigInt(bits - i * 8 - 8)) & 0xffn)
 	}
 	return result
 }
 
-function signedToBytes(value: bigint | number, width: number = 32): Uint8Array {
+function signedToBytes(value: bigint | number, byteWidth: number = 32): Uint8Array {
 	if (typeof value === 'number') value = BigInt(value)
-	const bits = width * 8
+	const bits = byteWidth * 8
 	if (value >= 2n ** (BigInt(bits) - 1n) || value < -(2n ** (BigInt(bits) - 1n))) throw new Error(`Cannot fit ${value} into a ${bits}-bit signed integer.`)
 	const unsignedValue = twosComplement(value, bits)
 	return unsignedToBytes(unsignedValue)
@@ -569,4 +589,11 @@ function signedToBytes(value: bigint | number, width: number = 32): Uint8Array {
 function twosComplement(value: bigint, numberOfBits: number): bigint {
 	const mask = 2n ** (BigInt(numberOfBits) - 1n) - 1n
 	return (value & mask) - (value & ~mask)
+}
+
+// https://github.com/microsoft/TypeScript/issues/17002
+declare global {
+	interface ArrayConstructor {
+		isArray(arg: ReadonlyArray<any> | any): arg is ReadonlyArray<any>
+	}
 }

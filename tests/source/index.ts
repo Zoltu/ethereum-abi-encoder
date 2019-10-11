@@ -1,4 +1,4 @@
-import { encodeParameters, decodeParameters, parseSignature, generateSignature, decodeEvent, decodeUnknownEvent } from '@zoltu/ethereum-abi-encoder'
+import { encodeParameters, decodeParameters, parseSignature, generateSignature, decodeEvent, decodeUnknownEvent, encodeMethod } from '@zoltu/ethereum-abi-encoder'
 import { keccak256 } from '@zoltu/ethereum-crypto'
 
 import Jasmine = require('jasmine');
@@ -2324,6 +2324,42 @@ describe('eventDecoding', () => {
 				tokens_sold: 20976300000000000000n,
 			}
 		})
+	})
+})
+
+describe('encodeMethod', () => {
+	beforeAll(() => (jasmine.jasmine as any).addCustomEqualityTester(uint8ArrayCompare) )
+	it('no parameters', async () => {
+		const description = {
+			type: 'function',
+			name: 'apple',
+			inputs: [],
+		} as const
+		const expected = hexStringToBytes('0x5e88bc14')
+		const encoded = await encodeMethod(keccak256.hash, description, [])
+		expect(encoded).toEqual(expected)
+	})
+	it('transfer', async () => {
+		const description = {
+			type: 'function',
+			name: 'transfer',
+			inputs: [
+				{ type: 'address', name: 'destination' },
+				{ type: 'uint256', name: 'amount' },
+			],
+		} as const
+		const expected = hexStringToBytes('0xa9059cbb000000000000000000000000add12e55add12e55add12e55add12e55add12e550000000000000000000000000000000000000000000000000de0b6b3a7640000')
+		const encoded = await encodeMethod(keccak256.hash, description, [0xadd12e55add12e55add12e55add12e55add12e55n, 10n**18n])
+		expect(encoded).toEqual(expected)
+	})
+	it('transfer with pre-calculated selector', async () => {
+		const description = [
+			{ type: 'address', name: 'destination' },
+			{ type: 'uint256', name: 'amount' },
+		] as const
+		const expected = hexStringToBytes('0xa9059cbb000000000000000000000000add12e55add12e55add12e55add12e55add12e550000000000000000000000000000000000000000000000000de0b6b3a7640000')
+		const encoded = encodeMethod(0xa9059cbb, description, [0xadd12e55add12e55add12e55add12e55add12e55n, 10n**18n])
+		expect(encoded).toEqual(expected)
 	})
 })
 
