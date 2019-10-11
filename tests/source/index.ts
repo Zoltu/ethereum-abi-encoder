@@ -2352,6 +2352,12 @@ describe('encodeMethod', () => {
 		const encoded = await encodeMethod(keccak256.hash, description, [0xadd12e55add12e55add12e55add12e55add12e55n, 10n**18n])
 		expect(encoded).toEqual(expected)
 	})
+	it('transfer with signature', async () => {
+		const signature = 'transfer(address,uint256)'
+		const expected = hexStringToBytes('0xa9059cbb000000000000000000000000add12e55add12e55add12e55add12e55add12e550000000000000000000000000000000000000000000000000de0b6b3a7640000')
+		const encoded = await encodeMethod(keccak256.hash, signature, [0xadd12e55add12e55add12e55add12e55add12e55n, 10n**18n])
+		expect(encoded).toEqual(expected)
+	})
 	it('transfer with pre-calculated selector', async () => {
 		const description = [
 			{ type: 'address', name: 'destination' },

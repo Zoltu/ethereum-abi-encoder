@@ -289,11 +289,10 @@ function tryDecodeFunction(description: ParameterDescription, _data: Uint8Array,
 export async function encodeMethod(keccak256: (message: Uint8Array) => Promise<bigint>, functionDescription: FunctionDescription, parameters: EncodableArray): Promise<Uint8Array>
 export async function encodeMethod(keccak256: (message: Uint8Array) => Promise<bigint>, functionSignature: string, parameters: EncodableArray): Promise<Uint8Array>
 export function encodeMethod(functionSelector: number, parameterDescriptions: ReadonlyArray<ParameterDescription>, parameters: EncodableArray): Uint8Array
-export function encodeMethod(hasherOrSelector: ((message: Uint8Array) => Promise<bigint>) | number, functionOrParametersDescription: FunctionDescription | string | ReadonlyArray<ParameterDescription> | EncodableArray, parameters: EncodableArray): Promise<Uint8Array> | Uint8Array {
-	if (typeof hasherOrSelector === 'function') return encodeMethodWithDescription(hasherOrSelector, functionOrParametersDescription as FunctionDescription, parameters)
-	else if (typeof hasherOrSelector === 'string') return encodeMethodWithSignature(hasherOrSelector, functionOrParametersDescription as string, parameters)
-	else if (typeof hasherOrSelector === 'number') return encodeMethodWithSelector(hasherOrSelector, functionOrParametersDescription as ReadonlyArray<ParameterDescription>, parameters)
-	else throw new Error(`Called with invalid parameters`)
+export function encodeMethod(first: ((message: Uint8Array) => Promise<bigint>) | number, second: FunctionDescription | string | ReadonlyArray<ParameterDescription> | EncodableArray, parameters: EncodableArray): Promise<Uint8Array> | Uint8Array {
+	if (typeof first === 'number') return encodeMethodWithSelector(first, second as ReadonlyArray<ParameterDescription>, parameters)
+	else if (typeof second === 'string') return encodeMethodWithSignature(first, second, parameters)
+	else return encodeMethodWithDescription(first, second as FunctionDescription, parameters)
 }
 
 async function encodeMethodWithDescription(keccak256: (message: Uint8Array) => Promise<bigint>, functionDescription: FunctionDescription, parameters: EncodableArray): Promise<Uint8Array> {
