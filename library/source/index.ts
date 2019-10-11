@@ -1,4 +1,7 @@
-import { EncodableTuple, Encodable, Bytes, EncodableArray, Address, FixedBytesLike, Bytes32, Bytes31, Bytes30, Bytes29, Bytes28, Bytes27, Bytes26, Bytes25, Bytes24, Bytes23, Bytes22, Bytes21, Bytes20, Bytes19, Bytes18, Bytes17, Bytes16, Bytes15, Bytes14, Bytes13, Bytes12, Bytes11, Bytes10, Bytes9, Bytes8, Bytes7, Bytes6, Bytes5, Bytes4, Bytes3, Bytes2, Bytes1 } from '@zoltu/ethereum-types'
+declare type Encodable = EncodablePrimitive | EncodableTuple | EncodableArray;
+declare type EncodablePrimitive = Uint8Array | string | boolean | bigint;
+interface EncodableTuple { [x: string]: Encodable }
+interface EncodableArray { readonly length: number, readonly [n: number]: Encodable }
 
 export interface FunctionDescription {
 	readonly type?: 'function'
@@ -159,7 +162,7 @@ function tryDecodeFixedArray(description: ParameterDescription, data: Uint8Array
 	const subdescription = Object.assign({}, description, { type: match[1] })
 	const length = Number.parseInt(match[2], 10)
 	if (isDynamic(subdescription)) {
-		const pointer = Number(Bytes32.fromByteArray(data.subarray(offset, offset + 32)).toUnsignedBigint())
+		const pointer = Number(bytesToInteger(data.subarray(offset, offset + 32)))
 		const result: Encodable[] = []
 		let consumed = 0
 		for (let i = 0; i < length; ++i) {
@@ -184,8 +187,8 @@ function tryDecodeDynamicArray(description: ParameterDescription, data: Uint8Arr
 	if (!description.type.endsWith('[]')) return null
 	const subtype = description.type.substring(0, description.type.length - 2)
 	const subdescription = Object.assign({}, description, { type: subtype })
-	const pointer = Number(Bytes32.fromByteArray(data.subarray(offset, offset + 32)).toUnsignedBigint())
-	const length = Number(Bytes32.fromByteArray(data.subarray(pointer, pointer + 32)).toUnsignedBigint())
+	const pointer = Number(bytesToInteger(data.subarray(offset, offset + 32)))
+	const length = Number(bytesToInteger(data.subarray(pointer, pointer + 32)))
 	const result: Encodable[] = []
 	let consumed = 0
 	for (let i = 0; i < length; ++i) {
@@ -202,7 +205,7 @@ function tryDecodeTuple(description: ParameterDescription, data: Uint8Array, off
 	let consumed: number = 0
 	if (description.components === undefined || description.components.length === 0) {
 	} else if (anyIsDynamic(description.components)) {
-		const pointer = Number(Bytes32.fromByteArray(data.subarray(offset, offset + 32)).toUnsignedBigint())
+		const pointer = Number(bytesToInteger(data.subarray(offset, offset + 32)))
 		for (let component of description.components) {
 			const { result: componentResult, consumed: componentConsumed } = decodeParameter(component, data.subarray(pointer), consumed)
 			consumed += componentConsumed
@@ -220,27 +223,27 @@ function tryDecodeTuple(description: ParameterDescription, data: Uint8Array, off
 	return { result, consumed }
 }
 
-function tryDecodeDynamicBytes(description: ParameterDescription, data: Uint8Array, offset: number): { result: Bytes, consumed: 32 } | null {
+function tryDecodeDynamicBytes(description: ParameterDescription, data: Uint8Array, offset: number): { result: Uint8Array, consumed: 32 } | null {
 	if (description.type !== 'bytes') return null
-	const pointer = Number(Bytes32.fromByteArray(data.subarray(offset, offset + 32)).toUnsignedBigint())
-	const length = Number(Bytes32.fromByteArray(data.subarray(pointer, pointer + 32)).toUnsignedBigint())
-	const bytes = Bytes.fromByteArray(data.subarray(pointer + 32, pointer + 32 + length))
+	const pointer = Number(bytesToInteger(data.subarray(offset, offset + 32)))
+	const length = Number(bytesToInteger(data.subarray(pointer, pointer + 32)))
+	const bytes = data.subarray(pointer + 32, pointer + 32 + length)
 	return { result: bytes, consumed: 32 }
 }
 
 function tryDecodeString(description: ParameterDescription, data: Uint8Array, offset: number): { result: string, consumed: 32 } | null {
 	if (description.type !== 'string') return null
-	const pointer = Number(Bytes32.fromByteArray(data.subarray(offset, offset + 32)).toUnsignedBigint())
-	const length = Number(Bytes32.fromByteArray(data.subarray(pointer, pointer + 32)).toUnsignedBigint())
-	const bytes = Bytes.fromByteArray(data.subarray(pointer + 32, pointer + 32 + length))
+	const pointer = Number(bytesToInteger(data.subarray(offset, offset + 32)))
+	const length = Number(bytesToInteger(data.subarray(pointer, pointer + 32)))
+	const bytes = data.subarray(pointer + 32, pointer + 32 + length)
 	const decoded = new TextDecoder().decode(bytes)
 	return { result: decoded, consumed: 32 }
 }
 
 function tryDecodeBoolean(description: ParameterDescription, data: Uint8Array, offset: number): { result: boolean, consumed: 32 } | null {
 	if (description.type !== 'bool') return null
-	const bytes = Bytes32.fromByteArray(data.subarray(offset, offset + 32))
-	const decoded = (bytes.toUnsignedBigint() === 0n) ? false : true
+	const bytes = data.subarray(offset, offset + 32)
+	const decoded = (bytesToInteger(bytes) === 0n) ? false : true
 	return { result: !!decoded, consumed: 32 }
 }
 
@@ -250,55 +253,24 @@ function tryDecodeNumber(description: ParameterDescription, data: Uint8Array, of
 	const size = Number.parseInt(match[2])
 	if (size <= 0 || size > 256 || size % 8) return null
 	const signed = !match[1]
-	const bytes = Bytes32.fromByteArray(data.subarray(offset, offset + 32))
-	const decoded = signed ? bytes.toSignedBigint() : bytes.toUnsignedBigint()
+	const bytes = data.subarray(offset, offset + 32)
+	const decoded = bytesToInteger(bytes, signed)
 	if (decoded >= 2n**BigInt(size)) throw new Error(`Encoded number is bigger than the expected size.  Expected ${size}, but decoded ${decoded}.`)
 	return { result: decoded, consumed: 32 }
 }
 
-function tryDecodeAddress(description: ParameterDescription, data: Uint8Array, offset: number): { result: Address, consumed: 32 } | null {
+function tryDecodeAddress(description: ParameterDescription, data: Uint8Array, offset: number): { result: bigint, consumed: 32 } | null {
 	if (description.type !== 'address') return null
-	return { result: Address.fromByteArray(data.subarray(offset + 12, offset + 32)), consumed: 32 }
+	return { result: bytesToInteger(data.subarray(offset + 12, offset + 32)), consumed: 32 }
 }
 
-function tryDecodeFixedBytes(description: ParameterDescription, data: Uint8Array, offset: number): { result: FixedBytesLike, consumed: 32} | null {
+function tryDecodeFixedBytes(description: ParameterDescription, data: Uint8Array, offset: number): { result: bigint, consumed: 32} | null {
 	const match = /^bytes(\d+)$/.exec(description.type)
 	if (match === null) return null
 	const size = Number.parseInt(match[1])
+	if (size < 1 || size > 32) throw new Error(`Can only decode fixed length bytes values between 1 and 32 bytes.  Receivede 'bytes${size}'.`)
 	const dataSubset = data.subarray(offset, offset + size)
-	if (size == 32) return { result: Bytes32.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 31) return { result: Bytes31.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 30) return { result: Bytes30.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 29) return { result: Bytes29.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 28) return { result: Bytes28.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 27) return { result: Bytes27.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 26) return { result: Bytes26.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 25) return { result: Bytes25.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 24) return { result: Bytes24.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 23) return { result: Bytes23.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 22) return { result: Bytes22.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 21) return { result: Bytes21.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 20) return { result: Bytes20.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 19) return { result: Bytes19.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 18) return { result: Bytes18.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 17) return { result: Bytes17.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 16) return { result: Bytes16.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 15) return { result: Bytes15.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 14) return { result: Bytes14.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 13) return { result: Bytes13.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 12) return { result: Bytes12.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 11) return { result: Bytes11.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 10) return { result: Bytes10.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 9) return { result: Bytes9.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 8) return { result: Bytes8.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 7) return { result: Bytes7.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 6) return { result: Bytes6.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 5) return { result: Bytes5.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 4) return { result: Bytes4.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 3) return { result: Bytes3.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 2) return { result: Bytes2.fromByteArray(dataSubset), consumed: 32 }
-	else if (size == 1) return { result: Bytes1.fromByteArray(dataSubset), consumed: 32 }
-	return null
+	return { result: bytesToInteger(dataSubset), consumed: 32 }
 }
 
 function tryDecodeFixedPointNumber(description: ParameterDescription, _data: Uint8Array, _offset: number): never | null {
@@ -314,7 +286,7 @@ function tryDecodeFunction(description: ParameterDescription, _data: Uint8Array,
 
 // encoding
 
-export function encodeParameters(descriptions: ReadonlyArray<ParameterDescription>, parameters: ReadonlyArray<Encodable>): Bytes {
+export function encodeParameters(descriptions: ReadonlyArray<ParameterDescription>, parameters: ReadonlyArray<Encodable>): Uint8Array {
 	if (descriptions.length !== parameters.length) throw new Error(`Number of provided parameters (${parameters.length}) does not match number of expected parameters (${descriptions.length})`)
 	const encodedParameters = parameters.map((nestedParameter, index) => encodeParameter(descriptions[index], nestedParameter))
 	return encodeDynamicData(encodedParameters)
@@ -355,7 +327,7 @@ function tryEncodeDynamicArray(description: ParameterDescription, parameter: Enc
 	if (!Array.isArray(parameter)) throw new Error(`Can only encode a JavaScript 'array' into an EVM 'array'\n${parameter}`)
 	const nestedDescription = Object.assign({}, description, { type: description.type.substring(0, description.type.length - 2) })
 	const encodedParameters = parameter.map(nestedParameter => encodeParameter(nestedDescription, nestedParameter))
-	const lengthBytes = Bytes32.fromUnsignedInteger(encodedParameters.length)
+	const lengthBytes = integerToBytes(encodedParameters.length)
 	return { isDynamic: true, bytes: concatenateBytes([lengthBytes, encodeDynamicData(encodedParameters)]) }
 }
 
@@ -363,7 +335,7 @@ function tryEncodeTuple(description: ParameterDescription, parameter: Encodable)
 	if (description.type !== 'tuple') return null
 	if (typeof parameter !== 'object') throw new Error(`Can only encode a JavaScript 'object' or a JavaScript array into an EVM 'tuple'\n${parameter}`)
 	if (description.components === undefined || description.components.length === 0) {
-		return { isDynamic: false, bytes: new Bytes(0) }
+		return { isDynamic: false, bytes: new Uint8Array(0) }
 	} else {
 		const encodableTupleOrArray = parameter as EncodableTuple | EncodableArray
 		const encodedComponents = description.components.map((component, index) => {
@@ -391,7 +363,7 @@ function tryEncodeString(description: ParameterDescription, parameter: Encodable
 function tryEncodeBoolean(description: ParameterDescription, parameter: Encodable): { isDynamic: false, bytes: Uint8Array } | null {
 	if (description.type !== 'bool') return null
 	if (typeof parameter !== 'boolean') throw new Error(`Can only encode JavaScript 'boolean' into EVM 'bool'\n${parameter}`)
-	const bytes = new Bytes32()
+	const bytes = new Uint8Array(32)
 	bytes.set([parameter ? 1 : 0], 31)
 	return { isDynamic: false, bytes }
 }
@@ -404,22 +376,22 @@ function tryEncodeNumber(description: ParameterDescription, parameter: Encodable
 	if (size <= 0 || size > 256 || size % 8) throw new Error(`EVM numbers must be in range [8, 256] and must be divisible by 8.`)
 	if (parameter >= 2n**BigInt(size)) throw new Error(`Attempted to encode ${parameter} into a ${description.type}, but it is too big to fit.`)
 	const signed = !match[1]
-	const bytes = signed ? Bytes32.fromSignedInteger(parameter) : Bytes32.fromUnsignedInteger(parameter)
+	const bytes = integerToBytes(parameter, 32, signed)
 	return { isDynamic: false, bytes }
 }
 
 function tryEncodeAddress(description: ParameterDescription, parameter: Encodable): { isDynamic: false, bytes: Uint8Array } | null {
 	if (description.type !== 'address') return null
-	if (!(parameter instanceof Uint8Array) || parameter.length !== 20) throw new Error(`Can only encode JavaScript 'Uint8Array(20)' into EVM 'address'\n${parameter}`)
-	return { isDynamic: false, bytes: padLeftTo32Bytes(parameter) }
+	if (typeof parameter !== 'bigint') throw new Error(`Can only encode JavaScript 'bigint' into EVM 'address'\n${parameter}`)
+	return { isDynamic: false, bytes: padLeftTo32Bytes(integerToBytes(parameter, 20)) }
 }
 
 function tryEncodeFixedBytes(description: ParameterDescription, parameter: Encodable): { isDynamic: false, bytes: Uint8Array } | null {
 	const match = /^bytes(\d+)$/.exec(description.type)
 	if (match === null) return null
 	const size = Number.parseInt(match[1])
-	if (!(parameter instanceof Uint8Array) || parameter.length !== size) throw new Error(`Can only encode JavaScript 'Uint8Array(${size})' into EVM 'bytes${size}'\n${parameter}`)
-	return { isDynamic: false, bytes: padRightTo32Bytes(parameter) }
+	if (typeof parameter !== 'bigint') throw new Error(`Can only encode JavaScript 'bigint' into EVM 'bytes${size}'\n${parameter}`)
+	return { isDynamic: false, bytes: padRightTo32Bytes(integerToBytes(parameter, size)) }
 }
 
 function tryEncodeFixedPointNumber(description: ParameterDescription): { isDynamic: never, bytes: Uint8Array } | null {
@@ -435,27 +407,27 @@ function tryEncodeFunction(description: ParameterDescription): { isDynamic: neve
 
 // events
 
-export async function decodeUnknownEvent(keccak256: (message: Uint8Array) => Promise<bigint>, abi: ReadonlyArray<AbiDescription>, topics: ReadonlyArray<Bytes32>, data: Bytes): Promise<DecodedEvent> {
+export async function decodeUnknownEvent(keccak256: (message: Uint8Array) => Promise<bigint>, abi: ReadonlyArray<AbiDescription>, topics: ReadonlyArray<bigint>, data: Uint8Array): Promise<DecodedEvent> {
 	for (const eventDescription of abi) {
 		if (!isEventDescription(eventDescription)) continue
 		const canonicalSignature = `${eventDescription.name}(${eventDescription.inputs.map(parameter => parameter.type).join(",")})`
-		const signatureHash = Bytes32.fromUnsignedInteger(await keccak256(new TextEncoder().encode(canonicalSignature)))
-		if (!topics[0].equals(signatureHash)) continue
+		const signatureHash = await keccak256(new TextEncoder().encode(canonicalSignature))
+		if (topics[0] !== signatureHash) continue
 		return decodeEvent(eventDescription, topics, data)
 	}
 	throw new Error(`No event description matched the event ${topics[0]}`)
 }
 
-export function decodeEvent(eventDescription: EventDescription, topics: ReadonlyArray<Bytes32>, data: Bytes): DecodedEvent {
+export function decodeEvent(eventDescription: EventDescription, topics: ReadonlyArray<bigint>, data: Uint8Array): DecodedEvent {
 	// CONSIDER: should we take in a hash function so we can verify topics[0] matches, or just blindly extract?
 	const decodedParameters = decodeEventParameters(eventDescription.inputs, topics, data)
 	return { name: eventDescription.name, parameters: decodedParameters }
 }
 
-function decodeEventParameters(parameters: ReadonlyArray<EventParameterDescription>, topics: ReadonlyArray<Bytes32>, data: Bytes): EncodableTuple {
+function decodeEventParameters(parameters: ReadonlyArray<EventParameterDescription>, topics: ReadonlyArray<bigint>, data: Uint8Array): EncodableTuple {
 	const indexedTypesForDecoding = parameters.filter(parameter => parameter.indexed).map(getTypeForEventDecoding)
 	const nonIndexedTypesForDecoding = parameters.filter(parameter => !parameter.indexed)
-	const indexedData = concatenateBytes(topics.slice(1))
+	const indexedData = concatenateBytes(topics.slice(1).map(topic => integerToBytes(topic)))
 	const nonIndexedData = data
 	const decodedIndexedParameters = decodeParameters(indexedTypesForDecoding, indexedData)
 	if (!decodedIndexedParameters) throw new Error(`Failed to decode topics for event ${topics[0]}.\n${indexedData}`)
@@ -481,35 +453,35 @@ function isEventDescription(maybe: AbiDescription): maybe is EventDescription { 
 
 // helpers
 
-function padLeftTo32Bytes(input: Uint8Array): Bytes {
+function padLeftTo32Bytes(input: Uint8Array): Uint8Array {
 	const length = (input.length % 32)
 		? input.length + 32 - input.length % 32
 		: input.length
-	const result = new Bytes(length)
+	const result = new Uint8Array(length)
 	result.set(input, result.length - input.length)
 	return result
 }
 
-function padRightTo32Bytes(input: Uint8Array): Bytes {
+function padRightTo32Bytes(input: Uint8Array): Uint8Array {
 	const length = (input.length % 32)
 		? input.length + 32 - input.length % 32
 		: input.length
-	const result = new Bytes(length)
+	const result = new Uint8Array(length)
 	result.set(input, 0)
 	return result
 }
 
-function concatenateBytes(source: ReadonlyArray<Uint8Array>): Bytes {
-	return Bytes.fromByteArray(source.flatMap(x => [...x]))
+function concatenateBytes(source: ReadonlyArray<Uint8Array>): Uint8Array {
+	return new Uint8Array(source.flatMap(x => [...x]))
 }
 
-function padAndLengthPrefix(source: Uint8Array): Bytes {
+function padAndLengthPrefix(source: Uint8Array): Uint8Array {
 	const length = source.length
 	const padded = padRightTo32Bytes(source)
-	return concatenateBytes([Bytes32.fromUnsignedInteger(length), padded])
+	return concatenateBytes([integerToBytes(length), padded])
 }
 
-function encodeDynamicData(encodedData: ReadonlyArray<{ isDynamic: boolean, bytes: Uint8Array }>): Bytes {
+function encodeDynamicData(encodedData: ReadonlyArray<{ isDynamic: boolean, bytes: Uint8Array }>): Uint8Array {
 	let staticBytesSize = 0
 	for (let encodedParameter of encodedData) {
 		if (encodedParameter.isDynamic) staticBytesSize += 32
@@ -520,7 +492,7 @@ function encodeDynamicData(encodedData: ReadonlyArray<{ isDynamic: boolean, byte
 	for (let encodedParameter of encodedData) {
 		if (encodedParameter.isDynamic) {
 			const dynamicBytesAppendedSoFar = dynamicBytes.reduce((total, bytes) => total += bytes.length, 0)
-			staticBytes.push(Bytes32.fromUnsignedInteger(staticBytesSize + dynamicBytesAppendedSoFar))
+			staticBytes.push(integerToBytes(staticBytesSize + dynamicBytesAppendedSoFar))
 			dynamicBytes.push(encodedParameter.bytes)
 		} else {
 			staticBytes.push(encodedParameter.bytes)
@@ -548,4 +520,53 @@ function isDynamic(description: ParameterDescription): boolean {
 
 function isEncodableArray(maybe: EncodableArray | EncodableTuple): maybe is EncodableArray {
 	return Array.isArray(maybe)
+}
+
+function bytesToInteger(bytes: Uint8Array, signed = false): bigint {
+	return signed
+		? bytesToSigned(bytes)
+		: bytesToUnsigned(bytes)
+}
+
+function integerToBytes(value: bigint | number, width = 32, signed = false): Uint8Array {
+	return signed
+		? signedToBytes(value, width)
+		: unsignedToBytes(value, width)
+}
+
+function bytesToUnsigned(bytes: Uint8Array) {
+	let value = 0n
+	for (let byte of bytes) {
+		value = (value << 8n) + BigInt(byte)
+	}
+	return value
+}
+
+function bytesToSigned(bytes: Uint8Array) {
+	const unsignedValue = bytesToUnsigned(bytes)
+	return twosComplement(unsignedValue, bytes.length * 8)
+}
+
+function unsignedToBytes(value: bigint | number, width: number = 32): Uint8Array {
+	if (typeof value === 'number') value = BigInt(value)
+	const bits = width * 8
+	if (value >= 2n ** BigInt(bits) || value < 0n) throw new Error(`Cannot fit ${value} into a ${bits}-bit unsigned integer.`)
+	const result = new Uint8Array(width)
+	for (let i = 0; i < width; ++i) {
+		result[i] = Number((value >> BigInt(bits - i * 8 - 8)) & 0xffn)
+	}
+	return result
+}
+
+function signedToBytes(value: bigint | number, width: number = 32): Uint8Array {
+	if (typeof value === 'number') value = BigInt(value)
+	const bits = width * 8
+	if (value >= 2n ** (BigInt(bits) - 1n) || value < -(2n ** (BigInt(bits) - 1n))) throw new Error(`Cannot fit ${value} into a ${bits}-bit signed integer.`)
+	const unsignedValue = twosComplement(value, bits)
+	return unsignedToBytes(unsignedValue)
+}
+
+function twosComplement(value: bigint, numberOfBits: number): bigint {
+	const mask = 2n ** (BigInt(numberOfBits) - 1n) - 1n
+	return (value & mask) - (value & ~mask)
 }

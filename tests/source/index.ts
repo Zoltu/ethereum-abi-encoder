@@ -1,4 +1,3 @@
-import { Bytes, Address, Bytes16, Bytes32 } from '@zoltu/ethereum-types'
 import { encodeParameters, decodeParameters, parseSignature, generateSignature, decodeEvent, decodeUnknownEvent } from '@zoltu/ethereum-abi-encoder'
 import { keccak256 } from '@zoltu/ethereum-crypto'
 
@@ -11,7 +10,7 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'bool'} ]
 		const parameters = [ true ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000001
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
@@ -20,7 +19,7 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'bool'} ]
 		const parameters = [ false ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000000
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
@@ -29,7 +28,7 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'uint8'} ]
 		const parameters = [ 5n ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000005
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
@@ -38,7 +37,7 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'uint32'} ]
 		const parameters = [ 2n**32n - 1n ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		00000000000000000000000000000000000000000000000000000000ffffffff
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
@@ -47,7 +46,7 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'uint40'} ]
 		const parameters = [ 2n**40n - 1n ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		000000000000000000000000000000000000000000000000000000ffffffffff
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
@@ -56,7 +55,7 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'uint256'} ]
 		const parameters = [ 2n**256n - 1n ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
@@ -65,7 +64,7 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'int8'} ]
 		const parameters = [ -5n ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
@@ -74,7 +73,7 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'int32'} ]
 		const parameters = [ 2n**31n - 1n ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		000000000000000000000000000000000000000000000000000000007fffffff
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
@@ -83,7 +82,7 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'int32'} ]
 		const parameters = [ -(2n**31n) ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		ffffffffffffffffffffffffffffffffffffffffffffffffffffffff80000000
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
@@ -92,7 +91,7 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'int40'} ]
 		const parameters = [ 2n**39n - 1n ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000007fffffffff
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
@@ -101,7 +100,7 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'int40'} ]
 		const parameters = [ -(2n**39n) ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		ffffffffffffffffffffffffffffffffffffffffffffffffffffff8000000000
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
@@ -110,7 +109,7 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'int256'} ]
 		const parameters = [ 2n**255n - 1n ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
@@ -119,16 +118,16 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'int256'} ]
 		const parameters = [ -(2n**255n) ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		8000000000000000000000000000000000000000000000000000000000000000
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
 	})
 	it('address', async () => {
 		const abi = [ {name: 'a', type: 'address'} ]
-		const parameters = [ Address.fromHexString('1234567890abcdef1234567890abcdef12345678') ]
+		const parameters = [ 0x1234567890abcdef1234567890abcdef12345678n ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		0000000000000000000000001234567890abcdef1234567890abcdef12345678
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
@@ -137,7 +136,7 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'string'} ]
 		const parameters = [ 'hello' ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000005
 		68656c6c6f000000000000000000000000000000000000000000000000000000
@@ -146,9 +145,9 @@ describe('encoding', () => {
 	})
 	it('bytes', async () => {
 		const abi = [ {name: 'a', type: 'bytes'} ]
-		const parameters = [ new Bytes([0xaa, 0xbb, 0xcc, 0xdd]) ]
+		const parameters = [ new Uint8Array([0xaa, 0xbb, 0xcc, 0xdd]) ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000004
 		aabbccdd00000000000000000000000000000000000000000000000000000000
@@ -157,9 +156,9 @@ describe('encoding', () => {
 	})
 	it('bytes16', async () => {
 		const abi = [ {name: 'a', type: 'bytes16'} ]
-		const parameters = [ Bytes16.fromHexString('12345678901234567890123456789012') ]
+		const parameters = [ 0x12345678901234567890123456789012n ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		1234567890123456789012345678901200000000000000000000000000000000
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
@@ -168,14 +167,14 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'tuple', components: []} ]
 		const parameters = [ {} ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString('')
+		const expected = hexStringToBytes('')
 		expect(encoded).toEqual(expected)
 	})
 	it('simple, static, tuple', async () => {
 		const abi = [ {name: 'a', type: 'tuple', components: [{ name: 'b', type: 'uint32' }]} ]
 		const parameters = [ {b: (2n**32n-1n)} ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		00000000000000000000000000000000000000000000000000000000ffffffff
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
@@ -184,7 +183,7 @@ describe('encoding', () => {
 		const abi = [ {name: 'a', type: 'tuple', components: [{ name: 'b', type: 'string' }]} ]
 		const parameters = [ {b: 'hello'} ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000005
@@ -194,9 +193,9 @@ describe('encoding', () => {
 	})
 	it('complex, static, tuple', async () => {
 		const abi = [ {name: 'a', type: 'tuple', components: [{ name: 'b', type: 'uint32' }, { name: 'c', type: 'address' }]} ]
-		const parameters = [ {b: (2n**32n-1n), c: Address.fromHexString('1234567890abcdef1234567890abcdef12345678')} ]
+		const parameters = [ {b: (2n**32n-1n), c: 0x1234567890abcdef1234567890abcdef12345678n} ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		00000000000000000000000000000000000000000000000000000000ffffffff
 		0000000000000000000000001234567890abcdef1234567890abcdef12345678
 		`.replace(/[\n\t]/g, ''))
@@ -204,9 +203,9 @@ describe('encoding', () => {
 	})
 	it('complex, static, positional tuple', async () => {
 		const abi = [ {name: '', type: 'tuple', components: [{ name: '', type: 'uint32' }, { name: '', type: 'address' }]} ]
-		const parameters = [ [ (2n**32n-1n), Address.fromHexString('1234567890abcdef1234567890abcdef12345678') ] ]
+		const parameters = [ [ (2n**32n-1n), 0x1234567890abcdef1234567890abcdef12345678n ] ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		00000000000000000000000000000000000000000000000000000000ffffffff
 		0000000000000000000000001234567890abcdef1234567890abcdef12345678
 		`.replace(/[\n\t]/g, ''))
@@ -214,9 +213,9 @@ describe('encoding', () => {
 	})
 	it('complex, dynamic, tuple', async () => {
 		const abi = [ {name: 'a', type: 'tuple', components: [{ name: 'b', type: 'string' }, { name: 'c', type: 'bytes'}]} ]
-		const parameters = [ {b: 'hello', c: new Bytes([0xaa, 0xbb, 0xcc, 0xdd])} ]
+		const parameters = [ {b: 'hello', c: new Uint8Array([0xaa, 0xbb, 0xcc, 0xdd])} ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000040
 		0000000000000000000000000000000000000000000000000000000000000080
@@ -231,7 +230,7 @@ describe('encoding', () => {
 		const abi = [ { name: 'a', type: 'uint32[2]' } ]
 		const parameters = [ [ 2n**32n - 1n, 5n ] ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		00000000000000000000000000000000000000000000000000000000ffffffff
 		0000000000000000000000000000000000000000000000000000000000000005
 		`.replace(/[\n\t]/g, ''))
@@ -241,7 +240,7 @@ describe('encoding', () => {
 		const abi = [ { name: 'a', type: 'tuple[2]', components: [ { name: 'b', type: 'uint32' } ] } ]
 		const parameters = [ [ { b: 2n**32n - 1n }, { b: 5n } ] ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		00000000000000000000000000000000000000000000000000000000ffffffff
 		0000000000000000000000000000000000000000000000000000000000000005
 		`.replace(/[\n\t]/g, ''))
@@ -251,7 +250,7 @@ describe('encoding', () => {
 		const abi = [ { name: 'a', type: 'string[2]' } ]
 		const parameters = [ [ 'hello', 'goodbye' ] ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000040
 		0000000000000000000000000000000000000000000000000000000000000080
@@ -264,9 +263,9 @@ describe('encoding', () => {
 	})
 	it('complex, dynamic, fixed length, array', async () => {
 		const abi = [ { name: 'a', type: 'tuple[2]', components: [ { name: 'b', type: 'string' }, { name: 'c', type: 'bytes' } ] } ]
-		const parameters = [ [ {b: 'hello', c: new Bytes([0xaa, 0xbb, 0xcc, 0xdd])}, {b: 'goodbye', c: new Bytes([0x11, 0x22, 0x33, 0x44, 0x55])} ] ]
+		const parameters = [ [ {b: 'hello', c: new Uint8Array([0xaa, 0xbb, 0xcc, 0xdd])}, {b: 'goodbye', c: new Uint8Array([0x11, 0x22, 0x33, 0x44, 0x55])} ] ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000040
 		0000000000000000000000000000000000000000000000000000000000000100
@@ -289,7 +288,7 @@ describe('encoding', () => {
 		const abi = [ { name: 'a', type: 'uint32[]' } ]
 		const parameters = [ [ 2n**32n - 1n, 5n ] ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000002
 		00000000000000000000000000000000000000000000000000000000ffffffff
@@ -301,7 +300,7 @@ describe('encoding', () => {
 		const abi = [ { name: 'a', type: 'tuple[]', components: [ { name: 'b', type: 'uint32' } ] } ]
 		const parameters = [ [ { b: 2n**32n - 1n }, { b: 5n } ] ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000002
 		00000000000000000000000000000000000000000000000000000000ffffffff
@@ -313,7 +312,7 @@ describe('encoding', () => {
 		const abi = [ { name: 'a', type: 'string[]' } ]
 		const parameters = [ [ 'hello', 'goodbye' ] ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000002
 		0000000000000000000000000000000000000000000000000000000000000040
@@ -327,9 +326,9 @@ describe('encoding', () => {
 	})
 	it('complex, dynamic, dynamic length, array', async () => {
 		const abi = [ { name: 'a', type: 'tuple[]', components: [ { name: 'b', type: 'string' }, { name: 'c', type: 'bytes' } ] } ]
-		const parameters = [ [ {b: 'hello', c: new Bytes([0xaa, 0xbb, 0xcc, 0xdd])}, {b: 'goodbye', c: new Bytes([0x11, 0x22, 0x33, 0x44, 0x55])} ] ]
+		const parameters = [ [ {b: 'hello', c: new Uint8Array([0xaa, 0xbb, 0xcc, 0xdd])}, {b: 'goodbye', c: new Uint8Array([0x11, 0x22, 0x33, 0x44, 0x55])} ] ]
 		const encoded = encodeParameters(abi, parameters)
-		const expected = Bytes.fromHexString(`
+		const expected = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000002
 		0000000000000000000000000000000000000000000000000000000000000040
@@ -355,7 +354,7 @@ describe('decoding', () => {
 	beforeAll(() => (jasmine.jasmine as any).addCustomEqualityTester(uint8ArrayCompare) )
 	it('boolean true', async () => {
 		const abi = [ {name: 'a', type: 'bool'} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000001
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
@@ -364,7 +363,7 @@ describe('decoding', () => {
 	})
 	it('boolean false', async () => {
 		const abi = [ {name: 'a', type: 'bool'} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000000
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
@@ -373,7 +372,7 @@ describe('decoding', () => {
 	})
 	it('uint32: max', async () => {
 		const abi = [ {name: 'a', type: 'uint32'} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		00000000000000000000000000000000000000000000000000000000ffffffff
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
@@ -382,7 +381,7 @@ describe('decoding', () => {
 	})
 	it('int32: max', async () => {
 		const abi = [ {name: 'a', type: 'int32'} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		000000000000000000000000000000000000000000000000000000007fffffff
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
@@ -391,7 +390,7 @@ describe('decoding', () => {
 	})
 	it('int32: min', async () => {
 		const abi = [ {name: 'a', type: 'int32'} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		ffffffffffffffffffffffffffffffffffffffffffffffffffffffff80000000
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
@@ -400,7 +399,7 @@ describe('decoding', () => {
 	})
 	it('int32: -1', async () => {
 		const abi = [ {name: 'a', type: 'int32'} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
@@ -409,7 +408,7 @@ describe('decoding', () => {
 	})
 	it('uint256: max', async () => {
 		const abi = [ {name: 'a', type: 'uint256'} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
@@ -418,7 +417,7 @@ describe('decoding', () => {
 	})
 	it('uint40 max', async () => {
 		const abi = [ {name: 'a', type: 'uint40'} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		000000000000000000000000000000000000000000000000000000ffffffffff
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
@@ -427,7 +426,7 @@ describe('decoding', () => {
 	})
 	it('int40: max', async () => {
 		const abi = [ {name: 'a', type: 'int40'} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000007fffffffff
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
@@ -436,7 +435,7 @@ describe('decoding', () => {
 	})
 	it('int40: min', async () => {
 		const abi = [ {name: 'a', type: 'int40'} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		ffffffffffffffffffffffffffffffffffffffffffffffffffffff8000000000
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
@@ -445,7 +444,7 @@ describe('decoding', () => {
 	})
 	it('int40: -1', async () => {
 		const abi = [ {name: 'a', type: 'int40'} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
@@ -454,16 +453,16 @@ describe('decoding', () => {
 	})
 	it('address', async () => {
 		const abi = [ {name: 'a', type: 'address'} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		0000000000000000000000001234567890abcdef1234567890abcdef12345678
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
-		const expected = { a: Address.fromHexString('1234567890abcdef1234567890abcdef12345678') }
+		const expected = { a: 0x1234567890abcdef1234567890abcdef12345678n }
 		expect(decoded).toEqual(expected)
 	})
 	it('string', async () => {
 		const abi = [ {name: 'a', type: 'string'} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000005
 		68656c6c6f000000000000000000000000000000000000000000000000000000
@@ -474,34 +473,34 @@ describe('decoding', () => {
 	})
 	it('bytes', async () => {
 		const abi = [ {name: 'a', type: 'bytes'} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000004
 		aabbccdd00000000000000000000000000000000000000000000000000000000
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
-		const expected = { a: new Bytes([0xaa, 0xbb, 0xcc, 0xdd]) }
+		const expected = { a: new Uint8Array([0xaa, 0xbb, 0xcc, 0xdd]) }
 		expect(decoded).toEqual(expected)
 	})
 	it('bytes16', async () => {
 		const abi = [ {name: 'a', type: 'bytes16'} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		1234567890123456789012345678901200000000000000000000000000000000
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
-		const expected = { a: Bytes16.fromHexString('12345678901234567890123456789012') }
+		const expected = { a: 0x12345678901234567890123456789012n }
 		expect(decoded).toEqual(expected)
 	})
 	it('empty tuple', async () => {
 		const abi = [ {name: 'a', type: 'tuple', components: []} ]
-		const data = new Bytes(0)
+		const data = new Uint8Array(0)
 		const decoded = decodeParameters(abi, data)
 		const expected = { a:  {}  }
 		expect(decoded).toEqual(expected)
 	})
 	it('simple, static, tuple', async () => {
 		const abi = [ {name: 'a', type: 'tuple', components: [{ name: 'b', type: 'uint32' }]} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		00000000000000000000000000000000000000000000000000000000ffffffff
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
@@ -510,7 +509,7 @@ describe('decoding', () => {
 	})
 	it('simple, dynamic, tuple', async () => {
 		const abi = [ {name: 'a', type: 'tuple', components: [{ name: 'b', type: 'string' }]} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000005
@@ -522,17 +521,17 @@ describe('decoding', () => {
 	})
 	it('complex, static, tuple', async () => {
 		const abi = [ {name: 'a', type: 'tuple', components: [{ name: 'b', type: 'uint32' }, { name: 'c', type: 'address' }]} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		00000000000000000000000000000000000000000000000000000000ffffffff
 		0000000000000000000000001234567890abcdef1234567890abcdef12345678
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
-		const expected = { a: {b: 2n**32n-1n, c: Address.fromHexString('1234567890abcdef1234567890abcdef12345678')} }
+		const expected = { a: {b: 2n**32n-1n, c: 0x1234567890abcdef1234567890abcdef12345678n} }
 		expect(decoded).toEqual(expected)
 	})
 	it('complex, dynamic, tuple', async () => {
 		const abi = [ {name: 'a', type: 'tuple', components: [{ name: 'b', type: 'string' }, { name: 'c', type: 'bytes'}]} ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000040
 		0000000000000000000000000000000000000000000000000000000000000080
@@ -542,12 +541,12 @@ describe('decoding', () => {
 		aabbccdd00000000000000000000000000000000000000000000000000000000
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
-		const expected = { a: {b: 'hello', c: new Bytes([0xaa, 0xbb, 0xcc, 0xdd])} }
+		const expected = { a: {b: 'hello', c: new Uint8Array([0xaa, 0xbb, 0xcc, 0xdd])} }
 		expect(decoded).toEqual(expected)
 	})
 	it('simple, static, fixed length, array', async () => {
 		const abi = [ { name: 'a', type: 'uint32[2]' } ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		00000000000000000000000000000000000000000000000000000000ffffffff
 		0000000000000000000000000000000000000000000000000000000000000005
 		`.replace(/[\n\t]/g, ''))
@@ -557,7 +556,7 @@ describe('decoding', () => {
 	})
 	it('complex, static, fixed length, array', async () => {
 		const abi = [ { name: 'a', type: 'tuple[2]', components: [ { name: 'b', type: 'uint32' } ] } ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		00000000000000000000000000000000000000000000000000000000ffffffff
 		0000000000000000000000000000000000000000000000000000000000000005
 		`.replace(/[\n\t]/g, ''))
@@ -567,7 +566,7 @@ describe('decoding', () => {
 	})
 	it('simple, dynamic, fixed length, array', async () => {
 		const abi = [ { name: 'a', type: 'string[2]' } ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000040
 		0000000000000000000000000000000000000000000000000000000000000080
@@ -582,7 +581,7 @@ describe('decoding', () => {
 	})
 	it('complex, dynamic, fixed length, array', async () => {
 		const abi = [ { name: 'a', type: 'tuple[2]', components: [ { name: 'b', type: 'string' }, { name: 'c', type: 'bytes' } ] } ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000040
 		0000000000000000000000000000000000000000000000000000000000000100
@@ -600,12 +599,12 @@ describe('decoding', () => {
 		1122334455000000000000000000000000000000000000000000000000000000
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
-		const expected = { a: [ {b: 'hello', c: new Bytes([0xaa, 0xbb, 0xcc, 0xdd])}, {b: 'goodbye', c: new Bytes([0x11, 0x22, 0x33, 0x44, 0x55])} ] }
+		const expected = { a: [ {b: 'hello', c: new Uint8Array([0xaa, 0xbb, 0xcc, 0xdd])}, {b: 'goodbye', c: new Uint8Array([0x11, 0x22, 0x33, 0x44, 0x55])} ] }
 		expect(decoded).toEqual(expected)
 	})
 	it('simple, static, dynamic length, array', async () => {
 		const abi = [ { name: 'a', type: 'uint32[]' } ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000002
 		00000000000000000000000000000000000000000000000000000000ffffffff
@@ -617,7 +616,7 @@ describe('decoding', () => {
 	})
 	it('complex, static, dynamic length, array', async () => {
 		const abi = [ { name: 'a', type: 'tuple[]', components: [ { name: 'b', type: 'uint32' } ] } ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000002
 		00000000000000000000000000000000000000000000000000000000ffffffff
@@ -629,7 +628,7 @@ describe('decoding', () => {
 	})
 	it('simple, dynamic, dynamic length, array', async () => {
 		const abi = [ { name: 'a', type: 'string[]' } ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000002
 		0000000000000000000000000000000000000000000000000000000000000040
@@ -645,7 +644,7 @@ describe('decoding', () => {
 	})
 	it('complex, dynamic, dynamic length, array', async () => {
 		const abi = [ { name: 'a', type: 'tuple[]', components: [ { name: 'b', type: 'string' }, { name: 'c', type: 'bytes' } ] } ]
-		const data = Bytes.fromHexString(`
+		const data = hexStringToBytes(`
 		0000000000000000000000000000000000000000000000000000000000000020
 		0000000000000000000000000000000000000000000000000000000000000002
 		0000000000000000000000000000000000000000000000000000000000000040
@@ -664,7 +663,7 @@ describe('decoding', () => {
 		1122334455000000000000000000000000000000000000000000000000000000
 		`.replace(/[\n\t]/g, ''))
 		const decoded = decodeParameters(abi, data)
-		const expected = { a: [ {b: 'hello', c: new Bytes([0xaa, 0xbb, 0xcc, 0xdd])}, {b: 'goodbye', c: new Bytes([0x11, 0x22, 0x33, 0x44, 0x55])} ] }
+		const expected = { a: [ {b: 'hello', c: new Uint8Array([0xaa, 0xbb, 0xcc, 0xdd])}, {b: 'goodbye', c: new Uint8Array([0x11, 0x22, 0x33, 0x44, 0x55])} ] }
 		expect(decoded).toEqual(expected)
 	})
 })
@@ -1225,8 +1224,8 @@ describe('eventDecoding', () => {
 			name: 'apple',
 			inputs: [],
 		} as const
-		const topics = [Bytes32.fromUnsignedInteger(0x5e88bc14e75dbc799d8b68e2ab1f9bd7a08806eb36c79a7ed5c5f88c6fa5e550n)]
-		const data = new Bytes()
+		const topics = [0x5e88bc14e75dbc799d8b68e2ab1f9bd7a08806eb36c79a7ed5c5f88c6fa5e550n]
+		const data = new Uint8Array()
 		const expectedEvent = { name: 'apple', parameters: {} }
 		const decodedEvent = decodeEvent(description, topics, data)
 		expect(decodedEvent).toEqual(expectedEvent)
@@ -1241,14 +1240,14 @@ describe('eventDecoding', () => {
 			],
 		} as const
 		const topics = [
-			Bytes32.fromUnsignedInteger(0xcfc5ef59554fc2c2edac407ccac3369a9e9d930f56b04a7ac9adb4b2638749fdn),
-			Bytes32.fromUnsignedInteger(0x0000000000000000000000000000000000000000000000000000000000000003n),
+			0xcfc5ef59554fc2c2edac407ccac3369a9e9d930f56b04a7ac9adb4b2638749fdn,
+			0x0000000000000000000000000000000000000000000000000000000000000003n,
 		]
-		const data = Bytes.fromHexString('0000000000000000000000000000000000000000000000000000000000000007')
+		const data = hexStringToBytes('0000000000000000000000000000000000000000000000000000000000000007')
 		const expectedEvent = {
 			name: 'Apple',
 			parameters: {
-				'banana': Address.fromUnsignedInteger(0x0000000000000000000000000000000000000003n),
+				'banana': 0x0000000000000000000000000000000000000003n,
 				'cherry': 7n,
 			}
 		}
@@ -1272,14 +1271,14 @@ describe('eventDecoding', () => {
 			}
 		] as const
 		const topics = [
-			Bytes32.fromUnsignedInteger(0xcfc5ef59554fc2c2edac407ccac3369a9e9d930f56b04a7ac9adb4b2638749fdn),
-			Bytes32.fromUnsignedInteger(0x0000000000000000000000000000000000000000000000000000000000000003n),
+			0xcfc5ef59554fc2c2edac407ccac3369a9e9d930f56b04a7ac9adb4b2638749fdn,
+			0x0000000000000000000000000000000000000000000000000000000000000003n,
 		]
-		const data = Bytes.fromHexString('0000000000000000000000000000000000000000000000000000000000000007')
+		const data = hexStringToBytes('0000000000000000000000000000000000000000000000000000000000000007')
 		const expectedEvent = {
 			name: 'Apple',
 			parameters: {
-				'banana': Address.fromUnsignedInteger(0x0000000000000000000000000000000000000003n),
+				'banana': 0x0000000000000000000000000000000000000003n,
 				'cherry': 7n,
 			}
 		}
@@ -2293,34 +2292,34 @@ describe('eventDecoding', () => {
 	] as const
 	it('real world', async () => {
 		const topics = [
-			Bytes32.fromUnsignedInteger(0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efn),
-			Bytes32.fromUnsignedInteger(0x00000000000000000000000090e765f06594d74a5513b45007fa5615778ed0b8n),
-			Bytes32.fromUnsignedInteger(0x00000000000000000000000009cabec1ead1c0ba254b09efb3ee13841712be14n),
+			0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efn,
+			0x00000000000000000000000090e765f06594d74a5513b45007fa5615778ed0b8n,
+			0x00000000000000000000000009cabec1ead1c0ba254b09efb3ee13841712be14n,
 		]
-		const data = Bytes.fromHexString('000000000000000000000000000000000000000000000001231ac9b67a06c000')
+		const data = hexStringToBytes('000000000000000000000000000000000000000000000001231ac9b67a06c000')
 		const decodedEvent = await decodeUnknownEvent(keccak256.hash, abi, topics, data)
 		expect(decodedEvent).toEqual({
 			name: 'Transfer',
 			parameters: {
-				_from: Address.fromUnsignedInteger(0x90e765f06594d74a5513b45007fa5615778ed0b8n),
-				_to: Address.fromUnsignedInteger(0x9cabec1ead1c0ba254b09efb3ee13841712be14n),
+				_from: 0x90e765f06594d74a5513b45007fa5615778ed0b8n,
+				_to: 0x9cabec1ead1c0ba254b09efb3ee13841712be14n,
 				_value: 20976300000000000000n,
 			}
 		})
 	})
 	it('real world', async () => {
 		const topics = [
-			Bytes32.fromUnsignedInteger(0x7f4091b46c33e918a0f3aa42307641d17bb67029427a5369e54b353984238705n),
-			Bytes32.fromUnsignedInteger(0x00000000000000000000000090e765f06594d74a5513b45007fa5615778ed0b8n),
-			Bytes32.fromUnsignedInteger(0x000000000000000000000000000000000000000000000001231ac9b67a06c000n),
-			Bytes32.fromUnsignedInteger(0x00000000000000000000000000000000000000000000000001632d58479e5427n),
+			0x7f4091b46c33e918a0f3aa42307641d17bb67029427a5369e54b353984238705n,
+			0x00000000000000000000000090e765f06594d74a5513b45007fa5615778ed0b8n,
+			0x000000000000000000000000000000000000000000000001231ac9b67a06c000n,
+			0x00000000000000000000000000000000000000000000000001632d58479e5427n,
 		]
-		const data = new Bytes()
+		const data = new Uint8Array()
 		const decodedEvent = await decodeUnknownEvent(keccak256.hash, abi, topics, data)
 		expect(decodedEvent).toEqual({
 			name: 'EthPurchase',
 			parameters: {
-				buyer: Address.fromUnsignedInteger(0x90e765f06594d74a5513b45007fa5615778ed0b8n),
+				buyer: 0x90e765f06594d74a5513b45007fa5615778ed0b8n,
 				eth_bought: 99973473914213415n,
 				tokens_sold: 20976300000000000000n,
 			}
@@ -2339,4 +2338,16 @@ function uint8ArrayCompare(first: Uint8Array, second: Uint8Array) {
 		return true
 	}
 	return undefined
+}
+
+function hexStringToBytes(hex: string): Uint8Array {
+	const match = /^(?:0x)?([a-fA-F0-9]*)$/.exec(hex)
+	if (match === null) throw new Error(`Expected a hex string encoded byte array with an optional '0x' prefix but received ${hex}`)
+	const normalized = match[1]
+	if (normalized.length % 2) throw new Error(`Hex string encoded byte array must be an even number of charcaters long.`)
+	const bytes = []
+	for (let i = 0; i < normalized.length; i += 2) {
+		bytes.push(Number.parseInt(`${normalized[i]}${normalized[i + 1]}`, 16))
+	}
+	return new Uint8Array(bytes)
 }
