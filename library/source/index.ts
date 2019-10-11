@@ -287,18 +287,25 @@ function tryDecodeFunction(description: ParameterDescription, _data: Uint8Array,
 // encoding
 
 export async function encodeMethod(keccak256: (message: Uint8Array) => Promise<bigint>, functionDescription: FunctionDescription, parameters: EncodableArray): Promise<Uint8Array>
+export async function encodeMethod(keccak256: (message: Uint8Array) => Promise<bigint>, functionSignature: string, parameters: EncodableArray): Promise<Uint8Array>
 export function encodeMethod(functionSelector: number, parameterDescriptions: ReadonlyArray<ParameterDescription>, parameters: EncodableArray): Uint8Array
-export function encodeMethod(hasherOrSelector: ((message: Uint8Array) => Promise<bigint>) | number, description: FunctionDescription | ReadonlyArray<ParameterDescription>, parameters: EncodableArray): Promise<Uint8Array> | Uint8Array {
-	if (typeof hasherOrSelector === 'number' && Array.isArray(description)) return encodeMethodWithSelector(hasherOrSelector, description, parameters)
-	else if (typeof hasherOrSelector === 'function' && !Array.isArray(description)) return encodeMethodWithHasher(hasherOrSelector, description, parameters)
+export function encodeMethod(hasherOrSelector: ((message: Uint8Array) => Promise<bigint>) | number, functionOrParametersDescription: FunctionDescription | string | ReadonlyArray<ParameterDescription> | EncodableArray, parameters: EncodableArray): Promise<Uint8Array> | Uint8Array {
+	if (typeof hasherOrSelector === 'function') return encodeMethodWithDescription(hasherOrSelector, functionOrParametersDescription as FunctionDescription, parameters)
+	else if (typeof hasherOrSelector === 'string') return encodeMethodWithSignature(hasherOrSelector, functionOrParametersDescription as string, parameters)
+	else if (typeof hasherOrSelector === 'number') return encodeMethodWithSelector(hasherOrSelector, functionOrParametersDescription as ReadonlyArray<ParameterDescription>, parameters)
 	else throw new Error(`Called with invalid parameters`)
 }
 
-async function encodeMethodWithHasher(keccak256: (message: Uint8Array) => Promise<bigint>, functionDescription: FunctionDescription, parameters: EncodableArray): Promise<Uint8Array> {
+async function encodeMethodWithDescription(keccak256: (message: Uint8Array) => Promise<bigint>, functionDescription: FunctionDescription, parameters: EncodableArray): Promise<Uint8Array> {
 	const canonicalSignature = generateSignature(functionDescription)
 	const canonicalSignatureHash = await keccak256(new TextEncoder().encode(canonicalSignature))
 	const functionSelector = canonicalSignatureHash >> 224n
 	return encodeMethod(Number(functionSelector), functionDescription.inputs, parameters)
+}
+
+async function encodeMethodWithSignature(keccak256: (message: Uint8Array) => Promise<bigint>, functionSignature: string, parameters: EncodableArray): Promise<Uint8Array> {
+	const functionDescription = parseSignature(functionSignature)
+	return await encodeMethodWithDescription(keccak256, functionDescription, parameters)
 }
 
 function encodeMethodWithSelector(functionSelector: number, parameterDescriptions: ReadonlyArray<ParameterDescription>, parameters: EncodableArray): Uint8Array {
