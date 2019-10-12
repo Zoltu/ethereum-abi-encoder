@@ -33,6 +33,16 @@ describe('encoding', () => {
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
 	})
+	it('uint8 too big', async () => {
+		const abi = [ {name: 'a', type: 'uint8'} ]
+		const parameters = [ 2n**8n ]
+		expect(() => encodeParameters(abi, parameters)).toThrowError('Attempted to encode 256 into a uint8, but it is too big to fit.')
+	})
+	it('uint8 too small', async () => {
+		const abi = [ {name: 'a', type: 'uint8'} ]
+		const parameters = [ -1n ]
+		expect(() => encodeParameters(abi, parameters)).toThrowError('Attempted to encode -1 into a uint8, but you cannot encode negative numbers into a uint8.')
+	})
 	it('uint32: max', async () => {
 		const abi = [ {name: 'a', type: 'uint32'} ]
 		const parameters = [ 2n**32n - 1n ]
@@ -68,6 +78,16 @@ describe('encoding', () => {
 		fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
+	})
+	it('int8 too big', async () => {
+		const abi = [ {name: 'a', type: 'int8'} ]
+		const parameters = [ 2n**7n ]
+		expect(() => encodeParameters(abi, parameters)).toThrowError('Attempted to encode 128 into a int8, but it is too big to fit.')
+	})
+	it('int8 too small', async () => {
+		const abi = [ {name: 'a', type: 'int8'} ]
+		const parameters = [ -(2n**7n + 1n) ]
+		expect(() => encodeParameters(abi, parameters)).toThrowError('Attempted to encode -129 into a int8, but it is too big (of a negative number) to fit.')
 	})
 	it('int32: max', async () => {
 		const abi = [ {name: 'a', type: 'int32'} ]
@@ -132,6 +152,16 @@ describe('encoding', () => {
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
 	})
+	it('address too big', async () => {
+		const abi = [ {name: 'a', type: 'address'} ]
+		const parameters = [ 0x10000000000000000000000000000000000000000n ]
+		expect(() => encodeParameters(abi, parameters)).toThrowError('Attempted to encode 0x10000000000000000000000000000000000000000 into an EVM address, but it is too big to fit.')
+	})
+	it('address too big', async () => {
+		const abi = [ {name: 'a', type: 'address'} ]
+		const parameters = [ -1n ]
+		expect(() => encodeParameters(abi, parameters)).toThrowError('Attempted to encode -1 into an EVM address, but addresses must be positive numbers.')
+	})
 	it('string', async () => {
 		const abi = [ {name: 'a', type: 'string'} ]
 		const parameters = [ 'hello' ]
@@ -162,6 +192,16 @@ describe('encoding', () => {
 		1234567890123456789012345678901200000000000000000000000000000000
 		`.replace(/[\n\t]/g, ''))
 		expect(encoded).toEqual(expected)
+	})
+	it('bytes16 too big', async () => {
+		const abi = [ {name: 'a', type: 'bytes16'} ]
+		const parameters = [ 2n**(16n*8n) ]
+		expect(() => encodeParameters(abi, parameters)).toThrowError('Attempted to encode 0x100000000000000000000000000000000 into an EVM bytes16, but it is too big to fit.')
+	})
+	it('bytes16 too big', async () => {
+		const abi = [ {name: 'a', type: 'bytes16'} ]
+		const parameters = [ -1n ]
+		expect(() => encodeParameters(abi, parameters)).toThrowError('Attempted to encode -0x1 into an EVM bytes16, but you cannot encode negative numbers into a bytes16.')
 	})
 	it('empty tuple', async () => {
 		const abi = [ {name: 'a', type: 'tuple', components: []} ]
@@ -370,6 +410,27 @@ describe('decoding', () => {
 		const expected = { a: false }
 		expect(decoded).toEqual(expected)
 	})
+	it('uint8 too big', async () => {
+		const abi = [ {name: 'a', type: 'uint8'} ]
+		const data = hexStringToBytes(`
+		0000000000000000000000000000000000000000000000000000000000000100
+		`.replace(/[\n\t]/g, ''))
+		expect(() => decodeParameters(abi, data)).toThrowError('Encoded number is bigger than the expected size.  Expected smaller than 256, but decoded 256.')
+	})
+	it('int8 too big', async () => {
+		const abi = [ {name: 'a', type: 'int8'} ]
+		const data = hexStringToBytes(`
+		0000000000000000000000000000000000000000000000000000000000000080
+		`.replace(/[\n\t]/g, ''))
+		expect(() => decodeParameters(abi, data)).toThrowError('Encoded number is bigger than the expected size.  Expected smaller than 128, but decoded 128.')
+	})
+	it('int8 too negative', async () => {
+		const abi = [ {name: 'a', type: 'int8'} ]
+		const data = hexStringToBytes(`
+		ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f
+		`.replace(/[\n\t]/g, ''))
+		expect(() => decodeParameters(abi, data)).toThrowError('Encoded number is bigger (negative) than the expected size.  Expected smaller (negative) than -128, but decoded -129.')
+	})
 	it('uint32: max', async () => {
 		const abi = [ {name: 'a', type: 'uint32'} ]
 		const data = hexStringToBytes(`
@@ -460,6 +521,13 @@ describe('decoding', () => {
 		const expected = { a: 0x1234567890abcdef1234567890abcdef12345678n }
 		expect(decoded).toEqual(expected)
 	})
+	it('address too big', async () => {
+		const abi = [ {name: 'a', type: 'address'} ]
+		const data = hexStringToBytes(`
+		0000dead0000beef000000001234567890abcdef1234567890abcdef12345678
+		`.replace(/[\n\t]/g, ''))
+		expect(() => decodeParameters(abi, data)).toThrowError('Encoded value is bigger than the largest possible address.  Decoded value: 0xdead0000beef000000001234567890abcdef1234567890abcdef12345678.')
+	})
 	it('string', async () => {
 		const abi = [ {name: 'a', type: 'string'} ]
 		const data = hexStringToBytes(`
@@ -490,6 +558,13 @@ describe('decoding', () => {
 		const decoded = decodeParameters(abi, data)
 		const expected = { a: 0x12345678901234567890123456789012n }
 		expect(decoded).toEqual(expected)
+	})
+	it('bytes16 with extraneous data', async () => {
+		const abi = [ {name: 'a', type: 'bytes16'} ]
+		const data = hexStringToBytes(`
+		123456789012345678901234567890120000dead0000beef0000000000000000
+		`.replace(/[\n\t]/g, ''))
+		expect(() => decodeParameters(abi, data)).toThrowError('Encoded value contains extraneous unexpected bytes.  Extraneous bytes: 0x0000dead0000beef0000000000000000.')
 	})
 	it('empty tuple', async () => {
 		const abi = [ {name: 'a', type: 'tuple', components: []} ]

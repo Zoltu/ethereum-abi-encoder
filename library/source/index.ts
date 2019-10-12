@@ -255,13 +255,18 @@ function tryDecodeNumber(description: ParameterDescription, data: Uint8Array, of
 	const signed = !match[1]
 	const bytes = data.subarray(offset, offset + 32)
 	const decoded = bytesToInteger(bytes, signed)
-	if (decoded >= 2n**BigInt(size)) throw new Error(`Encoded number is bigger than the expected size.  Expected ${size}, but decoded ${decoded}.`)
+	if (!signed && decoded >= 2n**BigInt(size)) throw new Error(`Encoded number is bigger than the expected size.  Expected smaller than ${2n**BigInt(size)}, but decoded ${decoded}.`)
+	if (signed && decoded >= 2n**BigInt(size-1)) throw new Error(`Encoded number is bigger than the expected size.  Expected smaller than ${2n**BigInt(size-1)}, but decoded ${decoded}.`)
+	if (signed && decoded < -(2n**BigInt(size-1))) throw new Error(`Encoded number is bigger (negative) than the expected size.  Expected smaller (negative) than -${2n**BigInt(size-1)}, but decoded ${decoded}.`)
 	return { result: decoded, consumed: 32 }
 }
 
 function tryDecodeAddress(description: ParameterDescription, data: Uint8Array, offset: number): { result: bigint, consumed: 32 } | null {
 	if (description.type !== 'address') return null
-	return { result: bytesToInteger(data.subarray(offset + 12, offset + 32)), consumed: 32 }
+	const bytes = data.subarray(offset, offset + 32)
+	const decoded = bytesToInteger(bytes)
+	if (decoded >= 2n**160n) throw new Error(`Encoded value is bigger than the largest possible address.  Decoded value: 0x${decoded.toString(16)}.`)
+	return { result: decoded, consumed: 32 }
 }
 
 function tryDecodeFixedBytes(description: ParameterDescription, data: Uint8Array, offset: number): { result: bigint, consumed: 32} | null {
@@ -269,8 +274,11 @@ function tryDecodeFixedBytes(description: ParameterDescription, data: Uint8Array
 	if (match === null) return null
 	const size = Number.parseInt(match[1])
 	if (size < 1 || size > 32) throw new Error(`Can only decode fixed length bytes values between 1 and 32 bytes.  Receivede 'bytes${size}'.`)
-	const dataSubset = data.subarray(offset, offset + size)
-	return { result: bytesToInteger(dataSubset), consumed: 32 }
+	const bytes = data.subarray(offset, offset + size)
+	const decoded = bytesToInteger(bytes)
+	const padding = data.subarray(offset + size, offset + 32)
+	if (padding.some(x => x !== 0)) throw new Error(`Encoded value contains extraneous unexpected bytes.  Extraneous bytes: 0x${Array.from(padding).map(x=>x.toString(16).padStart(2,'0')).join('')}.`)
+	return { result: decoded, consumed: 32 }
 }
 
 function tryDecodeFixedPointNumber(description: ParameterDescription, _data: Uint8Array, _offset: number): never | null {
@@ -400,8 +408,11 @@ function tryEncodeNumber(description: ParameterDescription, parameter: Encodable
 	if (typeof parameter !== 'bigint') throw new Error(`Can only encode a JavaScript 'bigint' into an EVM '${description.type}'\n${parameter}`)
 	const size = Number.parseInt(match[2])
 	if (size <= 0 || size > 256 || size % 8) throw new Error(`EVM numbers must be in range [8, 256] and must be divisible by 8.`)
-	if (parameter >= 2n**BigInt(size)) throw new Error(`Attempted to encode ${parameter} into a ${description.type}, but it is too big to fit.`)
 	const signed = !match[1]
+	if (!signed && parameter >= 2n**BigInt(size)) throw new Error(`Attempted to encode ${parameter} into a ${description.type}, but it is too big to fit.`)
+	if (!signed && parameter < 0n) throw new Error(`Attempted to encode ${parameter} into a ${description.type}, but you cannot encode negative numbers into a ${description.type}.`)
+	if (signed && parameter >= 2n**BigInt(size-1)) throw new Error(`Attempted to encode ${parameter} into a ${description.type}, but it is too big to fit.`)
+	if (signed && parameter < -(2n**BigInt(size-1))) throw new Error(`Attempted to encode ${parameter} into a ${description.type}, but it is too big (of a negative number) to fit.`)
 	const bytes = integerToBytes(parameter, 32, signed)
 	return { isDynamic: false, bytes }
 }
@@ -409,6 +420,8 @@ function tryEncodeNumber(description: ParameterDescription, parameter: Encodable
 function tryEncodeAddress(description: ParameterDescription, parameter: Encodable): { isDynamic: false, bytes: Uint8Array } | null {
 	if (description.type !== 'address') return null
 	if (typeof parameter !== 'bigint') throw new Error(`Can only encode JavaScript 'bigint' into EVM 'address'\n${parameter}`)
+	if (parameter > 0xffffffffffffffffffffffffffffffffffffffffn) throw new Error(`Attempted to encode 0x${parameter.toString(16)} into an EVM address, but it is too big to fit.`)
+	if (parameter < 0n) throw new Error(`Attempted to encode ${parameter} into an EVM address, but addresses must be positive numbers.`)
 	return { isDynamic: false, bytes: padLeftTo32Bytes(integerToBytes(parameter, 20)) }
 }
 
@@ -417,6 +430,8 @@ function tryEncodeFixedBytes(description: ParameterDescription, parameter: Encod
 	if (match === null) return null
 	const size = Number.parseInt(match[1])
 	if (typeof parameter !== 'bigint') throw new Error(`Can only encode JavaScript 'bigint' into EVM 'bytes${size}'\n${parameter}`)
+	if (parameter >= 2n**BigInt(size * 8)) throw new Error(`Attempted to encode 0x${parameter.toString(16)} into an EVM ${description.type}, but it is too big to fit.`)
+	if (parameter < 0n) throw new Error(`Attempted to encode -0x${parameter.toString(16).slice(1)} into an EVM ${description.type}, but you cannot encode negative numbers into a ${description.type}.`)
 	return { isDynamic: false, bytes: padRightTo32Bytes(integerToBytes(parameter, size)) }
 }
 
