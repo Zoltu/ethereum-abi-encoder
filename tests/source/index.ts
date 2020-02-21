@@ -1,4 +1,4 @@
-import { encodeParameters, decodeParameters, parseSignature, generateSignature, decodeEvent, decodeUnknownEvent, encodeMethod } from '@zoltu/ethereum-abi-encoder'
+import { encodeParameters, decodeParameters, parseSignature, generateSignature, decodeEvent, decodeUnknownEvent, encodeMethod, decodeMethod } from '@zoltu/ethereum-abi-encoder'
 import { keccak256 } from '@zoltu/ethereum-crypto'
 
 import Jasmine = require('jasmine');
@@ -768,7 +768,7 @@ describe('parseSignature', () => {
 			const expected = {
 				type: 'function',
 				name: 'transfer',
-				inputs: [{ name: '', type: 'address', components: undefined }],
+				inputs: [{ name: 'arg0', type: 'address', components: undefined }],
 				outputs: [],
 			} as const
 			expect(functionDescription).toEqual(expected)
@@ -779,8 +779,8 @@ describe('parseSignature', () => {
 				type: 'function',
 				name: 'transfer',
 				inputs: [
-					{ name: '', type: 'address', components: undefined },
-					{ name: '', type: 'uint256', components: undefined },
+					{ name: 'arg0', type: 'address', components: undefined },
+					{ name: 'arg1', type: 'uint256', components: undefined },
 				],
 				outputs: [],
 			} as const
@@ -791,7 +791,7 @@ describe('parseSignature', () => {
 			const expected = {
 				type: 'function',
 				name: 'transfer',
-				inputs: [ { name: '', type: 'address[]', components: undefined } ],
+				inputs: [ { name: 'arg0', type: 'address[]', components: undefined } ],
 				outputs: [],
 			} as const
 			expect(functionDescription).toEqual(expected)
@@ -801,7 +801,7 @@ describe('parseSignature', () => {
 			const expected = {
 				type: 'function',
 				name: 'transfer',
-				inputs: [ { name: '', type: 'address[5]', components: undefined } ],
+				inputs: [ { name: 'arg0', type: 'address[5]', components: undefined } ],
 				outputs: [],
 			} as const
 			expect(functionDescription).toEqual(expected)
@@ -813,11 +813,11 @@ describe('parseSignature', () => {
 				name: 'transfer',
 				inputs: [
 					{
-						name: '',
+						name: 'arg0',
 						type: 'tuple',
 						components: [
-							{ name: '', type: 'address', components: undefined },
-							{ name: '', type: 'uint256', components: undefined },
+							{ name: 'arg0', type: 'address', components: undefined },
+							{ name: 'arg1', type: 'uint256', components: undefined },
 						]
 					},
 				],
@@ -832,11 +832,11 @@ describe('parseSignature', () => {
 				name: 'transfer',
 				inputs: [
 					{
-						name: '',
+						name: 'arg0',
 						type: 'tuple[]',
 						components: [
-							{ name: '', type: 'address', components: undefined },
-							{ name: '', type: 'uint256', components: undefined },
+							{ name: 'arg0', type: 'address', components: undefined },
+							{ name: 'arg1', type: 'uint256', components: undefined },
 						]
 					},
 				],
@@ -851,7 +851,7 @@ describe('parseSignature', () => {
 				name: 'transfer',
 				inputs: [
 					{
-						name: '',
+						name: 'arg0',
 						type: 'tuple',
 						components: [],
 					},
@@ -867,7 +867,7 @@ describe('parseSignature', () => {
 				name: 'transfer',
 				inputs: [
 					{
-						name: '',
+						name: 'arg0',
 						type: 'tuple[]',
 						components: [],
 					},
@@ -883,23 +883,23 @@ describe('parseSignature', () => {
 				name: 'transfer',
 				inputs: [
 					{
-						name: '',
+						name: 'arg0',
 						type: 'tuple',
 						components: [
 							{
-								name: '',
+								name: 'arg0',
 								type: 'tuple',
 								components: [
-									{ name: '', type: 'address', components: undefined },
-									{ name: '', type: 'address', components: undefined },
+									{ name: 'arg0', type: 'address', components: undefined },
+									{ name: 'arg1', type: 'address', components: undefined },
 								],
 							},
 							{
-								name: '',
+								name: 'arg1',
 								type: 'tuple',
 								components: [
-									{ name: '', type: 'uint256', components: undefined },
-									{ name: '', type: 'uint256', components: undefined },
+									{ name: 'arg0', type: 'uint256', components: undefined },
+									{ name: 'arg1', type: 'uint256', components: undefined },
 								],
 							},
 						],
@@ -916,34 +916,34 @@ describe('parseSignature', () => {
 				name: 'transfer',
 				inputs: [
 					{
-						name: '',
+						name: 'arg0',
 						type: 'tuple[]',
 						components: [
 							{
-								name: '',
+								name: 'arg0',
 								type: 'tuple',
 								components: [
-									{ name: '', type: 'address', components: undefined },
-									{ name: '', type: 'address[]', components: undefined },
+									{ name: 'arg0', type: 'address', components: undefined },
+									{ name: 'arg1', type: 'address[]', components: undefined },
 								],
 							},
 							{
-								name: '',
+								name: 'arg1',
 								type: 'tuple',
 								components: [
-									{ name: '', type: 'uint256', components: undefined },
-									{ name: '', type: 'uint256', components: undefined },
+									{ name: 'arg0', type: 'uint256', components: undefined },
+									{ name: 'arg1', type: 'uint256', components: undefined },
 								],
 							},
 						],
 					},
-					{ name: '', type: 'bool', components: undefined },
+					{ name: 'arg1', type: 'bool', components: undefined },
 					{
-						name: '',
+						name: 'arg2',
 						type: 'tuple',
 						components: [
-							{ name: '', type: 'int256[]', components: undefined },
-							{ name: '', type: 'bool', components: undefined },
+							{ name: 'arg0', type: 'int256[]', components: undefined },
+							{ name: 'arg1', type: 'bool', components: undefined },
 						]
 					}
 				],
@@ -968,7 +968,7 @@ describe('parseSignature', () => {
 			const expected = {
 				type: 'function',
 				name: 'transfer',
-				inputs: [ { name: '', type: 'address', components: undefined } ],
+				inputs: [ { name: 'arg0', type: 'address', components: undefined } ],
 				outputs: [],
 			} as const
 			expect(functionDescription).toEqual(expected)
@@ -979,8 +979,8 @@ describe('parseSignature', () => {
 				type: 'function',
 				name: 'transfer',
 				inputs: [
-					{ name: '', type: 'address', components: undefined },
-					{ name: '', type: 'uint256', components: undefined },
+					{ name: 'arg0', type: 'address', components: undefined },
+					{ name: 'arg1', type: 'uint256', components: undefined },
 				],
 				outputs: [],
 			} as const
@@ -991,7 +991,7 @@ describe('parseSignature', () => {
 			const expected = {
 				type: 'function',
 				name: 'transfer',
-				inputs: [ { name: '', type: 'address[]', components: undefined } ],
+				inputs: [ { name: 'arg0', type: 'address[]', components: undefined } ],
 				outputs: [],
 			} as const
 			expect(functionDescription).toEqual(expected)
@@ -2403,7 +2403,7 @@ describe('eventDecoding', () => {
 })
 
 describe('encodeMethod', () => {
-	beforeAll(() => (jasmine.jasmine as any).addCustomEqualityTester(uint8ArrayCompare) )
+	beforeAll(() => (jasmine.jasmine as any).addCustomEqualityTester(uint8ArrayCompare))
 	it('no parameters', async () => {
 		const description = {
 			type: 'function',
@@ -2441,6 +2441,53 @@ describe('encodeMethod', () => {
 		const expected = hexStringToBytes('0xa9059cbb000000000000000000000000add12e55add12e55add12e55add12e55add12e550000000000000000000000000000000000000000000000000de0b6b3a7640000')
 		const encoded = encodeMethod(0xa9059cbb, description, [0xadd12e55add12e55add12e55add12e55add12e55n, 10n**18n])
 		expect(encoded).toEqual(expected)
+	})
+})
+
+describe('decodeMethod', () => {
+	it('no parameters', async () => {
+		const description = { type: 'function', name: 'apple', inputs: [] } as const
+		const bytes = hexStringToBytes('0x5e88bc14')
+		const decoded = await decodeMethod(keccak256.hash, description, bytes)
+		expect(decoded).toEqual({})
+	})
+	it('transfer', async () => {
+		const description = {
+			type: 'function',
+			name: 'transfer',
+			inputs: [
+				{ type: 'address', name: 'destination' },
+				{ type: 'uint256', name: 'amount' },
+			],
+		} as const
+		const expected = { destination: 0xadd12e55add12e55add12e55add12e55add12e55n, amount: 10n**18n }
+		const bytes = hexStringToBytes('0xa9059cbb000000000000000000000000add12e55add12e55add12e55add12e55add12e550000000000000000000000000000000000000000000000000de0b6b3a7640000')
+		const decoded = await decodeMethod(keccak256.hash, description, bytes)
+		expect(decoded).toEqual(expected)
+	})
+	it('transfer with signature', async () => {
+		const signature = 'transfer(address destination, uint256 amount)'
+		const expected = { destination: 0xadd12e55add12e55add12e55add12e55add12e55n, amount: 10n**18n }
+		const bytes = hexStringToBytes('0xa9059cbb000000000000000000000000add12e55add12e55add12e55add12e55add12e550000000000000000000000000000000000000000000000000de0b6b3a7640000')
+		const decoded = await decodeMethod(keccak256.hash, signature, bytes)
+		expect(decoded).toEqual(expected)
+	})
+	it('transfer with pre-calculated selector', async () => {
+		const descriptions = [
+			{ type: 'address', name: 'destination' },
+			{ type: 'uint256', name: 'amount' },
+		] as const
+		const expected = { destination: 0xadd12e55add12e55add12e55add12e55add12e55n, amount: 10n**18n }
+		const bytes = hexStringToBytes('0xa9059cbb000000000000000000000000add12e55add12e55add12e55add12e55add12e550000000000000000000000000000000000000000000000000de0b6b3a7640000')
+		const decoded = decodeMethod(0xa9059cbb, descriptions, bytes)
+		expect(decoded).toEqual(expected)
+	})
+	it('transfer with signature and no parameter names', async () => {
+		const signature = 'transfer(address,uint256)'
+		const expected = { arg0: 0xadd12e55add12e55add12e55add12e55add12e55n, arg1: 10n**18n }
+		const bytes = hexStringToBytes('0xa9059cbb000000000000000000000000add12e55add12e55add12e55add12e55add12e550000000000000000000000000000000000000000000000000de0b6b3a7640000')
+		const decoded = await decodeMethod(keccak256.hash, signature, bytes)
+		expect(decoded).toEqual(expected)
 	})
 })
 

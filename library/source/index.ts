@@ -66,7 +66,8 @@ function parseParameters(functionParameters: string): Array<ParameterDescription
 		remainingParameters = remaining
 		parameters.push(parameterDescription)
 	}
-	return parameters
+	// fill in any missing argument names
+	return parameters.map((x, i) => ({ ...x, name: x.name || `arg${i}` }))
 }
 
 function extractNextParameter(functionParameters: string): {parameterDescription: ParameterDescription, remaining: string} {
@@ -127,6 +128,35 @@ function toCanonicalParameter(parameter: ParameterDescription): string {
 
 
 // decoding
+
+export async function decodeMethod(keccak256: (message: Uint8Array) => Promise<bigint>, functionDescription: FunctionDescription, bytes: Uint8Array): Promise<EncodableTuple>
+export async function decodeMethod(keccak256: (message: Uint8Array) => Promise<bigint>, functionSignature: string, bytes: Uint8Array): Promise<EncodableTuple>
+export function decodeMethod(functionSelector: number, parameterDescriptions: ReadonlyArray<ParameterDescription>, bytes: Uint8Array): EncodableTuple
+export function decodeMethod(first: ((message: Uint8Array) => Promise<bigint>) | number, second: FunctionDescription | string | ReadonlyArray<ParameterDescription> | Uint8Array, bytes: Uint8Array): Promise<EncodableTuple> | EncodableTuple {
+	if (typeof first === 'number') return decodeMethodWithSelector(first, second as ReadonlyArray<ParameterDescription>, bytes)
+	else if (typeof second === 'string') return decodeMethodWithSignature(first, second, bytes)
+	else return decodeMethodWithDescription(first, second as FunctionDescription, bytes)
+}
+
+async function decodeMethodWithDescription(keccak256: (message: Uint8Array) => Promise<bigint>, functionDescription: FunctionDescription, bytes: Uint8Array): Promise<EncodableTuple> {
+	const canonicalSignature = generateSignature(functionDescription)
+	const canonicalSignatureHash = await keccak256(new TextEncoder().encode(canonicalSignature))
+	const functionSelector = canonicalSignatureHash >> 224n
+	return decodeMethod(Number(functionSelector), functionDescription.inputs, bytes)
+}
+
+async function decodeMethodWithSignature(keccak256: (message: Uint8Array) => Promise<bigint>, functionSignature: string, bytes: Uint8Array): Promise<EncodableTuple> {
+	const functionDescription = parseSignature(functionSignature)
+	return await decodeMethodWithDescription(keccak256, functionDescription, bytes)
+}
+
+function decodeMethodWithSelector(expectedSelector: number, parameterDescriptions: ReadonlyArray<ParameterDescription>, bytes: Uint8Array): EncodableTuple {
+	const actualSelector = bytesToInteger(bytes.slice(0, 4))
+	if (BigInt(expectedSelector) !== actualSelector) throw new Error(`Function selector of provided encoded method (${actualSelector.toString(16).padStart(8,'0')}) doesn't match expected selector (${expectedSelector.toString(16).padStart(8,'0')}).`)
+	bytes = bytes.slice(4)
+	return decodeParameters(parameterDescriptions, bytes)
+}
+
 
 export function decodeParameters(descriptions: ReadonlyArray<ParameterDescription>, data: Uint8Array): EncodableTuple {
 	let offset = 0
@@ -575,7 +605,7 @@ function integerToBytes(value: bigint | number, byteWidth = 32, signed = false):
 		: unsignedToBytes(value, byteWidth)
 }
 
-function bytesToUnsigned(bytes: Uint8Array) {
+function bytesToUnsigned(bytes: Uint8Array): bigint {
 	let value = 0n
 	for (let byte of bytes) {
 		value = (value << 8n) + BigInt(byte)
@@ -583,7 +613,7 @@ function bytesToUnsigned(bytes: Uint8Array) {
 	return value
 }
 
-function bytesToSigned(bytes: Uint8Array) {
+function bytesToSigned(bytes: Uint8Array): bigint {
 	const unsignedValue = bytesToUnsigned(bytes)
 	return twosComplement(unsignedValue, bytes.length * 8)
 }
