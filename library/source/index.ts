@@ -1,4 +1,4 @@
-export type Encodable = EncodablePrimitive | EncodableTuple | EncodableArray;
+export type Encodable = EncodablePrimitive | EncodableTuple | EncodableArray
 export type EncodablePrimitive = Uint8Array | string | boolean | bigint;
 export interface EncodableTuple { [x: string]: Encodable }
 export interface EncodableArray extends ReadonlyArray<Encodable> {}
@@ -109,12 +109,30 @@ function extractNextParameter(functionParameters: string): {parameterDescription
 
 // signature generation
 
-export function generateSignature(functionDescription: FunctionDescription): string {
+// TODO: split this into two functions, one that generates a canonical signature and one that generates a full signature (includes parameter names)
+export function generateFullSignature(functionDescription: FunctionDescription): string {
+	return `${functionDescription.name}(${toFullParameters(functionDescription.inputs)})`
+}
+
+export function generateCanonicalSignature(functionDescription: FunctionDescription): string {
 	return `${functionDescription.name}(${toCanonicalParameters(functionDescription.inputs)})`
+}
+
+function toFullParameters(parameters: readonly ParameterDescription[]): string {
+	return parameters.map(toFullParameter).join(', ')
 }
 
 function toCanonicalParameters(parameters: ReadonlyArray<ParameterDescription>): string {
 	return parameters.map(toCanonicalParameter).join(',')
+}
+
+function toFullParameter(parameter: ParameterDescription): string {
+	if (parameter.type.startsWith('tuple')) {
+		if (parameter.components === undefined) throw new Error(`Encountered a 'tuple' type that had no components.  Did you mean to include an empty array?`)
+		return `(${toFullParameters(parameter.components)})${parameter.type.slice('tuple'.length)} ${parameter.name}`
+	} else {
+		return `${parameter.type} ${parameter.name}`
+	}
 }
 
 function toCanonicalParameter(parameter: ParameterDescription): string {
@@ -139,10 +157,10 @@ export function decodeMethod(first: ((message: Uint8Array) => Promise<bigint>) |
 }
 
 async function decodeMethodWithDescription(keccak256: (message: Uint8Array) => Promise<bigint>, functionDescription: FunctionDescription, bytes: Uint8Array): Promise<EncodableTuple> {
-	const canonicalSignature = generateSignature(functionDescription)
+	const canonicalSignature = generateCanonicalSignature(functionDescription)
 	const canonicalSignatureHash = await keccak256(new TextEncoder().encode(canonicalSignature))
 	const functionSelector = canonicalSignatureHash >> 224n
-	return decodeMethod(Number(functionSelector), functionDescription.inputs, bytes)
+	return decodeMethodWithSelector(Number(functionSelector), functionDescription.inputs, bytes)
 }
 
 async function decodeMethodWithSignature(keccak256: (message: Uint8Array) => Promise<bigint>, functionSignature: string, bytes: Uint8Array): Promise<EncodableTuple> {
@@ -334,7 +352,7 @@ export function encodeMethod(first: ((message: Uint8Array) => Promise<bigint>) |
 }
 
 async function encodeMethodWithDescription(keccak256: (message: Uint8Array) => Promise<bigint>, functionDescription: FunctionDescription, parameters: EncodableArray): Promise<Uint8Array> {
-	const canonicalSignature = generateSignature(functionDescription)
+	const canonicalSignature = generateCanonicalSignature(functionDescription)
 	const canonicalSignatureHash = await keccak256(new TextEncoder().encode(canonicalSignature))
 	const functionSelector = canonicalSignatureHash >> 224n
 	return encodeMethod(Number(functionSelector), functionDescription.inputs, parameters)

@@ -1,4 +1,4 @@
-import { encodeParameters, decodeParameters, parseSignature, generateSignature, decodeEvent, decodeUnknownEvent, encodeMethod, decodeMethod } from '@zoltu/ethereum-abi-encoder'
+import { encodeParameters, decodeParameters, parseSignature, generateFullSignature, generateCanonicalSignature, decodeEvent, decodeUnknownEvent, encodeMethod, decodeMethod } from '@zoltu/ethereum-abi-encoder'
 import { keccak256 } from '@zoltu/ethereum-crypto'
 
 import Jasmine = require('jasmine');
@@ -1160,7 +1160,7 @@ describe('parseSignature', () => {
 	})
 })
 
-describe('generateSignature', () => {
+describe('generateCanonicalSignature', () => {
 	it('no parameters', () => {
 		const description = {
 			type: 'function',
@@ -1168,7 +1168,7 @@ describe('generateSignature', () => {
 			inputs: [],
 		} as const
 		const expected = 'transfer()'
-		const actual = generateSignature(description)
+		const actual = generateCanonicalSignature(description)
 		expect(actual).toEqual(expected)
 	})
 	it('one parameter', () => {
@@ -1178,7 +1178,7 @@ describe('generateSignature', () => {
 			inputs: [ { name: 'apple', type: 'address' } ],
 		} as const
 		const expected = 'transfer(address)'
-		const actual = generateSignature(description)
+		const actual = generateCanonicalSignature(description)
 		expect(actual).toEqual(expected)
 	})
 	it('two parameters', () => {
@@ -1191,7 +1191,7 @@ describe('generateSignature', () => {
 			],
 		} as const
 		const expected = 'transfer(address,uint256)'
-		const actual = generateSignature(description)
+		const actual = generateCanonicalSignature(description)
 		expect(actual).toEqual(expected)
 	})
 	it('array', () => {
@@ -1201,7 +1201,7 @@ describe('generateSignature', () => {
 			inputs: [ { name: 'apple', type: 'address[]' } ],
 		} as const
 		const expected = 'transfer(address[])'
-		const actual = generateSignature(description)
+		const actual = generateCanonicalSignature(description)
 		expect(actual).toEqual(expected)
 	})
 	it('empty tuple', () => {
@@ -1211,7 +1211,7 @@ describe('generateSignature', () => {
 			inputs: [ { name: 'apple', type: 'tuple', components: [] } ],
 		} as const
 		const expected = 'transfer(())'
-		const actual = generateSignature(description)
+		const actual = generateCanonicalSignature(description)
 		expect(actual).toEqual(expected)
 	})
 	it('simple tuple', () => {
@@ -1228,7 +1228,7 @@ describe('generateSignature', () => {
 			} ],
 		} as const
 		const expected = 'transfer((address,uint256))'
-		const actual = generateSignature(description)
+		const actual = generateCanonicalSignature(description)
 		expect(actual).toEqual(expected)
 	})
 	it('simple tuple dynamic array', () => {
@@ -1245,7 +1245,7 @@ describe('generateSignature', () => {
 			} ],
 		} as const
 		const expected = 'transfer((address,uint256)[])'
-		const actual = generateSignature(description)
+		const actual = generateCanonicalSignature(description)
 		expect(actual).toEqual(expected)
 	})
 	it('simple tuple fixed array', () => {
@@ -1262,7 +1262,7 @@ describe('generateSignature', () => {
 			} ],
 		} as const
 		const expected = 'transfer((address,uint256)[5])'
-		const actual = generateSignature(description)
+		const actual = generateCanonicalSignature(description)
 		expect(actual).toEqual(expected)
 	})
 	it('nested tuple', () => {
@@ -1286,7 +1286,138 @@ describe('generateSignature', () => {
 			} ],
 		} as const
 		const expected = 'transfer((address,(address,uint256))[])'
-		const actual = generateSignature(description)
+		const actual = generateCanonicalSignature(description)
+		expect(actual).toEqual(expected)
+	})
+})
+
+describe('generateFullSignature', () => {
+	it('no parameters', () => {
+		const description = {
+			type: 'function',
+			name: 'transfer',
+			inputs: [],
+		} as const
+		const expected = 'transfer()'
+		const actual = generateFullSignature(description)
+		expect(actual).toEqual(expected)
+	})
+	it('one parameter', () => {
+		const description = {
+			type: 'function',
+			name: 'transfer',
+			inputs: [ { name: 'apple', type: 'address' } ],
+		} as const
+		const expected = 'transfer(address apple)'
+		const actual = generateFullSignature(description)
+		expect(actual).toEqual(expected)
+	})
+	it('two parameters', () => {
+		const description = {
+			type: 'function',
+			name: 'transfer',
+			inputs: [
+				{ name: 'apple', type: 'address' },
+				{ name: 'banana', type: 'uint256' },
+			],
+		} as const
+		const expected = 'transfer(address apple, uint256 banana)'
+		const actual = generateFullSignature(description)
+		expect(actual).toEqual(expected)
+	})
+	it('array', () => {
+		const description = {
+			type: 'function',
+			name: 'transfer',
+			inputs: [ { name: 'apple', type: 'address[]' } ],
+		} as const
+		const expected = 'transfer(address[] apple)'
+		const actual = generateFullSignature(description)
+		expect(actual).toEqual(expected)
+	})
+	it('empty tuple', () => {
+		const description = {
+			type: 'function',
+			name: 'transfer',
+			inputs: [ { name: 'apple', type: 'tuple', components: [] } ],
+		} as const
+		const expected = 'transfer(() apple)'
+		const actual = generateFullSignature(description)
+		expect(actual).toEqual(expected)
+	})
+	it('simple tuple', () => {
+		const description = {
+			type: 'function',
+			name: 'transfer',
+			inputs: [ {
+				name: 'apple',
+				type: 'tuple',
+				components: [
+					{ name: 'banana', type: 'address' },
+					{ name: 'cherry', type: 'uint256' },
+				]
+			} ],
+		} as const
+		const expected = 'transfer((address banana, uint256 cherry) apple)'
+		const actual = generateFullSignature(description)
+		expect(actual).toEqual(expected)
+	})
+	it('simple tuple dynamic array', () => {
+		const description = {
+			type: 'function',
+			name: 'transfer',
+			inputs: [ {
+				name: 'apple',
+				type: 'tuple[]',
+				components: [
+					{ name: 'banana', type: 'address' },
+					{ name: 'cherry', type: 'uint256' },
+				]
+			} ],
+		} as const
+		const expected = 'transfer((address banana, uint256 cherry)[] apple)'
+		const actual = generateFullSignature(description)
+		expect(actual).toEqual(expected)
+	})
+	it('simple tuple fixed array', () => {
+		const description = {
+			type: 'function',
+			name: 'transfer',
+			inputs: [ {
+				name: 'apple',
+				type: 'tuple[5]',
+				components: [
+					{ name: 'banana', type: 'address' },
+					{ name: 'cherry', type: 'uint256' },
+				]
+			} ],
+		} as const
+		const expected = 'transfer((address banana, uint256 cherry)[5] apple)'
+		const actual = generateFullSignature(description)
+		expect(actual).toEqual(expected)
+	})
+	it('nested tuple', () => {
+		const description = {
+			type: 'function',
+			name: 'transfer',
+			inputs: [ {
+				name: 'apple',
+				type: 'tuple[]',
+				components: [
+					{ name: 'banana', type: 'address' },
+					{
+						name: 'cherry',
+						type: 'tuple',
+						components: [
+							{ name: 'durian', type: 'address' },
+							{ name: 'eggplant', type: 'uint256' },
+						],
+					},
+				]
+			} ],
+		} as const
+		const expected = 'transfer((address banana, (address durian, uint256 eggplant) cherry)[] apple)'
+		const actual = generateFullSignature(description)
 		expect(actual).toEqual(expected)
 	})
 })
