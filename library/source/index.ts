@@ -109,7 +109,6 @@ function extractNextParameter(functionParameters: string): {parameterDescription
 
 // signature generation
 
-// TODO: split this into two functions, one that generates a canonical signature and one that generates a full signature (includes parameter names)
 export function generateFullSignature(functionDescription: FunctionDescription): string {
 	return `${functionDescription.name}(${toFullParameters(functionDescription.inputs)})`
 }
