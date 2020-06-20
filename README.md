@@ -1,6 +1,6 @@
 # Description
 
-A single dependency Ethereum ABI encoder/decoder.  Also handles signature parsing and generation!
+A dependency free Ethereum ABI encoder/decoder.  Also handles signature parsing and generation!
 
 ### Features
 
