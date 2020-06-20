@@ -4,7 +4,7 @@ A dependency free Ethereum ABI encoder/decoder.  Also handles signature parsing 
 
 ### Features
 
- * Only one dependency, which has some base types that are really useful when working with Ethereum.
+ * No dependencies, just pure JS/TS.
  * ES and CommonJS module output.
  * Uses native ES bigint.
  * Simple functional interface.
