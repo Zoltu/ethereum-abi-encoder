@@ -243,7 +243,7 @@ function tryDecodeDynamicArray(description: ParameterDescription, data: Uint8Arr
 		consumed += itemConsumed
 		result.push(itemResult)
 	}
-	return { result, consumed }
+	return { result, consumed: 32 }
 }
 
 function tryDecodeTuple(description: ParameterDescription, data: Uint8Array, offset: number): { result: EncodableTuple, consumed: number } | null {

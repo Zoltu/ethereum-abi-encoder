@@ -741,6 +741,19 @@ describe('decoding', () => {
 		const expected = { a: [ {b: 'hello', c: new Uint8Array([0xaa, 0xbb, 0xcc, 0xdd])}, {b: 'goodbye', c: new Uint8Array([0x11, 0x22, 0x33, 0x44, 0x55])} ] }
 		expect(decoded).toEqual(expected)
 	})
+	it('dynamic array followed by uint256', async () => {
+		const abi = [ {name: 'a', type: 'uint256[]'}, {name: 'b', type: 'uint256'} ]
+		const data = hexStringToBytes(`
+		0000000000000000000000000000000000000000000000000000000000000040
+		000000000000000000000000000000000000000000000000000000000000000b
+		0000000000000000000000000000000000000000000000000000000000000002
+		00000000000000000000000000000000000000000000000000000000ffffffff
+		0000000000000000000000000000000000000000000000000000000000000005
+		`.replace(/[\n\t]/g, ''))
+		const decoded = decodeParameters(abi, data)
+		const expected = { a: [2n**32n - 1n, 5n], b: 11n }
+		expect(decoded).toEqual(expected)
+	})
 })
 
 describe('parseSignature', () => {
