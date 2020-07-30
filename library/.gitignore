@@ -1,3 +1,5 @@
 /**/node_modules/
-/output-es/
-/output-node/
+/output-esm/*
+/output-cjs/*
+!/output-esm/package.json
+!/output-cjs/package.json

@@ -2,6 +2,11 @@
 	"description": "N/A",
 	"repository": {},
 	"license": "Unlicense",
+	"main": "./output-cjs/index.js",
+	"exports": {
+		"import": "./output-es/index.js",
+		"require": "./output-cjs/index.js"
+	},
 	"dependencies": {
 		"@types/jasmine": "3.4.0",
 		"@types/node": "12.6.8",
