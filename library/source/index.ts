@@ -4,7 +4,7 @@ export interface EncodableTuple { [x: string]: Encodable }
 export interface EncodableArray extends ReadonlyArray<Encodable> {}
 
 export interface FunctionDescription {
-	readonly type?: 'function'
+	readonly type: 'function'
 	readonly name: string
 	readonly inputs: ReadonlyArray<ParameterDescription>
 	readonly outputs?: ReadonlyArray<ParameterDescription>
@@ -29,11 +29,17 @@ export interface FallbackDescription {
 	readonly stateMutability?: 'pure' | 'view' | 'nonpayable' | 'payable'
 }
 
+export interface ReceiveDescription {
+	readonly type: 'receive'
+	readonly stateMutability?: 'payable'
+}
+
 export type AbiDescription = FunctionDescription | EventDescription | ConstructorDescription | FallbackDescription
 
 export interface ParameterDescription {
 	readonly name: string
 	readonly type: string
+	readonly internalType?: string
 	readonly components?: ReadonlyArray<ParameterDescription>
 }
 

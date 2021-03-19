@@ -1,0 +1,30 @@
+name: Node.js CI
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  build:
+
+    runs-on: 'ubuntu-latest'
+
+    steps:
+    - uses: 'actions/checkout@v2'
+      with:
+        ref: '${{ github.event.release.target_commitish }}'
+    - name: 'Use Node.js 14'
+      uses: 'actions/setup-node@v1'
+      with:
+        node-version: '14'
+        registry-url: 'https://registry.npmjs.org/'
+    - run: 'echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV'
+    - run: 'cd library && npm version --no-git-tag-version ${{ env.RELEASE_VERSION }}'
+    - run: 'cd library && npm ci'
+    - run: 'cd library && npm run build'
+    - run: 'cd tests && npm ci'
+    - run: 'cd tests && npm run test'
+    - run: 'cd library && npm publish'
+      env:
+        NODE_AUTH_TOKEN: '${{ secrets.NPM_TOKEN }}'
