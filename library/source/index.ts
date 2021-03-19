@@ -34,7 +34,7 @@ export interface ReceiveDescription {
 	readonly stateMutability?: 'payable'
 }
 
-export type AbiDescription = FunctionDescription | EventDescription | ConstructorDescription | FallbackDescription
+export type AbiDescription = FunctionDescription | EventDescription | ConstructorDescription | FallbackDescription | ReceiveDescription
 
 export interface ParameterDescription {
 	readonly name: string
